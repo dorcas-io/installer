@@ -1,0 +1,6 @@
+node_modules/
+build/
+.idea
+.vscode
+bin/linux
+bin/windows
