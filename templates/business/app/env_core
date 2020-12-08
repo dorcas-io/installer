@@ -5,11 +5,11 @@ APP_DEBUG=true
 APP_LOG_LEVEL=debug
 
 
-DORCAS_HOST_API=http://localhost:18001
-DORCAS_HOST_HUB=http://localhost:18002
-APP_URL=http://localhost:18002
-APP_SITE_URL=http://localhost:18002
-APP_URL_STATIC=http://localhost:18002
+DORCAS_HOST_API=http://core_web:80
+DORCAS_HOST_HUB=http://hub_web:80
+APP_URL=http://core_web:80
+APP_SITE_URL=http://hub_web:80
+APP_URL_STATIC=http://hub_web:80
 DEPLOY_ENV=docker
 
 
