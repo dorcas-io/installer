@@ -30,7 +30,7 @@ services:
     env_file: ./app/env_core
     container_name: core_php
     volumes:
-#      - ./src/core:/var/www
+      #      - ./src/core:/var/www
       - ./app/env_core:/var/www/dorcas-business-core/.env
       - ./app/local.ini:/usr/local/etc/php/conf.d/local.ini
     depends_on:

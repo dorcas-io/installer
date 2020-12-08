@@ -15,9 +15,6 @@ DORCAS_BASE_URL=http://core_web:80
 DORCAS_ENV=production
 
 
-
-
-
 BROADCAST_DRIVER=pusher
 
 CACHE_DRIVER=redis
@@ -48,5 +45,5 @@ REDIS_CLIENT=predis
 
 MAIL_DRIVER=smtp
 MAIL_HOST=dorcas_smtp
-MAIL_PORT=1025DORCAS_CLIENT_ID=1
+MAIL_PORT=1025
 
