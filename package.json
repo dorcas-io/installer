@@ -2,7 +2,7 @@
   "name": "dorcas-installer",
   "version": "1.0.0",
   "description": "Dorcas business installer",
-  "main": "lib/main.js",
+  "main": "./bin/dorcas.js",
   "bin": {
     "dorcas": "./bin/dorcas.js"
   },
@@ -37,29 +37,6 @@
     "pretty-quick": "^2.0.1",
     "simple-git": "^1.129.0",
     "touch": "^3.1.0"
-  },
-  "pkg": {
-    "assets": [
-      "./node_modules/chalk/**",
-      "./node_modules/clear/**",
-      "./node_modules/clui/**",
-      "./node_modules/axios/**",
-      "./node_modules/configstore/**",
-      "./node_modules/envfile/**",
-      "./node_modules/figlet/**",
-      "./node_modules/inquirer/**",
-      "./node_modules/lodash/**",
-      "./node_modules/minimist/**",
-      "./node_modules/touch/**",
-      "./node_modules/listr/**",
-      "./node_modules/ncp/**",
-      "./node_modules/esm/**",
-      "./node_modules/touch/**",
-      "./node_modules/log-symbols/**",
-      "./bin/**",
-      "./lib/**",
-      "./templates/**"
-    ]
   },
   "devDependencies": {
     "prettier": "^2.1.2",

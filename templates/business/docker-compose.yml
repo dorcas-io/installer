@@ -20,7 +20,7 @@ services:
       - business
 
   core_php:
-    image: dorcashub/dorcas-business-base:latest
+    image: dorcashub/dorcas-business-base
     restart: unless-stopped
     tty: true
     environment:
@@ -58,7 +58,7 @@ services:
 
   hub_php:
     # image: dorcashub/docker-business-hub:latest
-    image: dorcashub/dorcas-business-hub:latest
+    image: dorcashub/dorcas-business-hub
     restart: unless-stopped
     tty: true
     environment:

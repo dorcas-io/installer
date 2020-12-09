@@ -5,11 +5,11 @@ APP_DEBUG=true
 APP_LOG_LEVEL=debug
 
 
-DORCAS_HOST_API=http://core_web:80
-DORCAS_HOST_HUB=http://hub_web:80
-APP_URL=http://core_web:80
-APP_SITE_URL=http://hub_web:80
-APP_URL_STATIC=http://hub_web:80
+DORCAS_HOST_API=http://localhost:18001
+DORCAS_HOST_HUB=http://localhost:18002
+APP_URL=http://localhost:18002
+APP_SITE_URL=http://localhost:18002
+APP_URL_STATIC=http://localhost:18002
 DEPLOY_ENV=docker
 
 
@@ -22,6 +22,12 @@ DB_DATABASE=dorcas
 DB_USERNAME=root
 DB_PASSWORD=root
 
+
+DB_HUB_HOST=dorcas_hub_sql
+DB_HUB_PORT=3306
+DB_HUB_DATABASE=dorcas_hub
+DB_HUB_USERNAME=root
+DB_HUB_PASSWORD=root
 
 
 CACHE_DRIVER=redis

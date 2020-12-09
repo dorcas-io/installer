@@ -20,7 +20,7 @@ services:
       - business
 
   core_php:
-    image: dorcashub/dorcas-business-base:latest
+    image: dorcashub/dorcas-business-base
     restart: unless-stopped
     tty: true
     environment:
@@ -30,7 +30,7 @@ services:
     env_file: ./app/env_core
     container_name: core_php
     volumes:
-#      - ./src/core:/var/www
+      #      - ./src/core:/var/www
       - ./app/env_core:/var/www/dorcas-business-core/.env
       - ./app/local.ini:/usr/local/etc/php/conf.d/local.ini
     depends_on:
@@ -58,7 +58,7 @@ services:
 
   hub_php:
     # image: dorcashub/docker-business-hub:latest
-    image: dorcashub/dorcas-business-hub:latest
+    image: dorcashub/dorcas-business-hub
     restart: unless-stopped
     tty: true
     environment:
