@@ -43,6 +43,7 @@
       "./node_modules/chalk/**",
       "./node_modules/clear/**",
       "./node_modules/clui/**",
+      "./node_modules/axios/**",
       "./node_modules/configstore/**",
       "./node_modules/envfile/**",
       "./node_modules/figlet/**",

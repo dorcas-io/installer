@@ -99,7 +99,7 @@ Vue.component('application-card', {
     template: '<div class="card">' +
     '        <div class="card-status" :class="{\'bg-red\': !application.is_published, \'bg-success\': application.is_published}"></div>' +
     '        <div class="card-header">' +
-    '            <h3 class="card-title"><i class="fe" :class="{\'fe-smartphone\': application.type === \'mobile\', \'fe-globe\': application.type === \'web\', \'fe-monitor\': application.type === \'desktop\', \'fe-terminal\': application.type === \'cli\'}"></i> {{ application.name }}</h3>' +
+    '            <h3 class="card-title"><i class="fe" :class="{\'fe-smartphone\': application.type === \'mobile\', \'fe-globe\': application.type === \'web\', \'fe-monitor\': application.type === \'desktop\', \'fe-terminal\': application.type === \'dorcas-mac-installer\'}"></i> {{ application.name }}</h3>' +
     '            <div class="card-options">' +
     '                <a href="#" class="btn btn-primary btn-sm" v-if="!is_processing" v-on:click.prevent="togglePublish">{{ !application.is_published ? "Publish" : "Unpublish" }}</a>' +
     '                <a href="#" class="btn-sm ml-0" v-on:click.prevent="editApp" v-if="!is_editing"><i class="fe fe-edit"></i></a>' +
