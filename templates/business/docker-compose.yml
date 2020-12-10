@@ -10,7 +10,7 @@ services:
       - "18001:80"
       - "18011:443"
     volumes:
-      - ./src/core:/var/www/dorcas-business-core
+      - ../src/core:/var/www/dorcas-business-core
       - ./web/core_default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - core_php
@@ -48,7 +48,7 @@ services:
       - "8001:80"
       - "18022:443"
     volumes:
-      - ./src/hub:/var/www
+      - ../src/hub:/var/www
       - ./web/hub_default.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - hub_php
