@@ -2,5 +2,5 @@ node_modules/
 build/
 .idea
 .vscode
-bin/linux
-bin/windows
+src/bin/linux
+src/bin/windows
