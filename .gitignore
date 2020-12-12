@@ -4,3 +4,4 @@ build/
 .vscode
 src/bin/linux
 src/bin/windows
+heroku-installer
