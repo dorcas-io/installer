@@ -16,6 +16,7 @@ const axios  = require('axios');
 const mysql  = require('mysql');
 
 
+
 clear();
 console.log(
     chalk.yellow(
@@ -39,35 +40,61 @@ async function writeFilesToEnv(options) {
   fs.appendFileSync(sourcePath, envfile.stringify(data))
 }
 
-  async function checkDbConnection(option){
-    const status = new Spinner('Connecting to Database...');
-    status.start();
-    try {
-      const ls = await spawn('docker', [`exec`,`dorcas_${option.template}_sql`,`mysql`,'-uroot','-proot', `dorcas`,`-e`,`"SELECT * FROM oauth_clients"`]);
-      ls.stderr.on( 'data', data => {
-        console.log( );
-      });
-      ls.on('close', async code => {
-        await status.stop()
-        if(code === 0){
-          console.log('connection to db successful')
-          return true;
-        }
-        else{
-          console.log('error connecting to db ')
-          return false;
-        }
-      });
-    }
-    catch (e) {
-      console.log(e)
-    }
-    finally {
+ async function checkTable(callback){
+   const  connection =  mysql.createConnection({
+     host: "127.0.0.1",
+     user:"root",
+     password: "root",
+     port: '18008',
+     database: "dorcas"
+   });
+   const status = new Spinner('Connecting to Database...');
+   status.start();
+   connection.query("SELECT * FROM oauth_clients",   async function(err, result, fields) {
+     if (err) {
+        console.log('%s Still Initializing Tables', chalk.red.bold('error'));
+         await status.stop();
+         connection.end();
+          callback(false)
+     } else {
+       console.log('%s Connection Instantiated', chalk.green.bold('success'));
+        await status.stop();
+        connection.end();
+         callback(true)
+     }
+   });
+ }
 
-    }
+ async function checkConnection(callback) {
+   const  connection =  mysql.createConnection({
+     host: "127.0.0.1",
+     user:"root",
+     password: "root",
+     port: '18008',
+     database: "dorcas"
+   });
+    const status = new Spinner('Connecting to Database...');
+     status.start();
+     connection.connect(   async function(err) {
+      if (err) {
+        callback(false)
+        console.log('%s Connection Failed', chalk.red.bold('error'));
+        connection.end();
+        await status.stop()
+      }
+      else {
+        await status.stop()
+        console.log('%s Connection Established', chalk.green.bold('success'));
+        connection.end();
+        callback(true)
+
+      }
+    });
+
   }
+
 async function createUserEntry(body) {
-  let res = await axios.post(`http://localhost:18001/register`, body).catch(err => { console.log( chalk.red.bold(`${err}`) )})
+  let res = await axios.post(`http://localhost:18001/register`, body).catch(err => { console.log( chalk.red.bold(`${err}`) ); process.exit()})
   return res.data.data;
 }
 
@@ -80,9 +107,6 @@ async function setUp() {
    status.start();
    try {
     const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory + `/docker-compose.yml`}`, `up`, `-d`, `core_${options.template}_web`,  `core_${options.template}_php`,  `dorcas_${options.template}_sql`, `dorcas_${options.template}_redis`, `dorcas_${options.template}_smtp`]);
-     ls.stderr.on( 'data', data => {
-       console.log( data );
-     } );
      ls.on('close', async code => {
          await status.stop()
          if(code === 0){
@@ -125,35 +149,53 @@ async function runHubDockerCompose(options){
       });
     }
     catch(err){
-      status.stop();
+      await status.stop();
     }
     finally {
 
     }
+
+
 }
 
 async function handleSetup(options) {
   const status = new Spinner('Setting Up Enviroment Variables...');
   const tasks = new Listr([{ title: 'Setting Up Dorcas Hub', task: () => runHubDockerCompose(options), },], { exitOnError: false, });
-   status.start();
+  status.start();
    try {
-     let connection =  await checkDbConnection();
-     if(connection){
-       setTimeout(async () => {
-         let res = await setUp(options)
-         options.clientId = res.client_id
-         options.clientSecret = res.client_secret
-         if (typeof options.clientId !== 'undefined') {
-           await writeFilesToEnv(options)
-           status.stop();
-           console.log('%s Enviroment Variables All Set ', chalk.green.bold('Success'));
-           await tasks.run();
-         }
-       }, 3000)
-     }
-     else{
-       await handleSetup(options);
-     }
+     await checkConnection(async function(result) {
+      if (result){
+        await checkTable(async function(result) {
+          if(result){
+            setTimeout(async () => {
+              let res = await setUp(options)
+              options.clientId = res.client_id
+              options.clientSecret = res.client_secret
+              if (typeof options.clientId !== 'undefined') {
+                await writeFilesToEnv(options)
+                await status.stop();
+                console.log('%s Enviroment Variables All Set ', chalk.green.bold('Success'));
+                await tasks.run();
+              }
+            }, 3000)
+          }
+          else{
+            setTimeout(async () => {
+              console.log('creating required tables');
+              await status.stop()
+              await handleSetup(options);
+            },3000)
+          }
+        })
+      }
+      else{
+         setTimeout(async () => {
+         console.log('retrying the connection');
+          await status.stop();
+          await handleSetup(options);
+        },3000)
+      }
+     });
 
    }
    catch (e) {
@@ -192,41 +234,63 @@ async function finalUerSetup(options) {
     
   }
   catch (err) {
-    status.stop();
+    await status.stop();
   }
 }
 
 
 async function createProject(options) {
-  await checkDbConnection(options);
-  //  const status = new Spinner('Initializing...');
-  //  status.start();
-  //   options = {
-  //   ...options,
-  //   targetDirectory: options.targetDirectory || process.cwd()+`/dorcas`,
-  //   };
-  // // const fullPathName = new URL(import.meta.url).pathname;
-  // const fullPathName = __dirname + '/main.js';
-  // const templateDir = path.resolve(
-  //   fullPathName.substr(fullPathName.indexOf('/')),
-  //   '../../templates',
-  //   options.template.toLowerCase()
-  // );
-  //  options.templateDirectory = templateDir;
-  // try {
-  //   await copyTemplateFiles(options)
-  //   console.log('%s Template Files Created', chalk.green.bold('Success'));
-  //   await access(templateDir, fs.constants.R_OK);
-  //   await status.stop();
-  //
-  // } catch (err) {
-  //   console.log(err)
-  //   console.error('%s Invalid template name', chalk.red.bold('ERROR'));
-  //   status.stop()
-  //   process.exit(1);
-  // }
-  // await runBaseDockerCompose(options)
-  // return true;
+  // checkConnection(async function(result) {
+  //   if (result){
+  //     await checkTable(async function(result) {
+  //       if(result){
+  //         setTimeout(async () => {
+  //           console.log('we good')
+  //         }, 3000)
+  //       }
+  //       else{
+  //         setTimeout(async () => {
+  //           console.log('creating required tables\n');
+  //           await createProject(options);
+  //         },3000)
+  //       }
+  //     })
+  //   }
+  //   else{
+  //     setTimeout(async () => {
+  //       console.log('retrying the connection\n');
+  //       await createProject(options);
+  //     },3000)
+  //   }
+  // });
+   const status = new Spinner('Initializing...');
+   await status.start();
+    options = {
+    ...options,
+    targetDirectory: options.targetDirectory || process.cwd()+`/dorcas`,
+    };
+  // const fullPathName = new URL(import.meta.url).pathname;
+  const fullPathName = __dirname + '/main.js';
+  const templateDir = path.resolve(
+    fullPathName.substr(fullPathName.indexOf('/')),
+    '../../templates',
+    options.template.toLowerCase()
+  );
+   options.templateDirectory = templateDir;
+  try {
+    await copyTemplateFiles(options)
+    console.log('%s Template Files Created', chalk.green.bold('Success'));
+    await access(templateDir, fs.constants.R_OK);
+    await status.stop();
+
+  } catch (err) {
+    console.log(err)
+    console.error('%s Invalid template name', chalk.red.bold('ERROR'));
+    await status.stop()
+    process.exit(1);
+  }
+  await runBaseDockerCompose(options)
+  return true;
  }
 
 exports.createProject = createProject;
