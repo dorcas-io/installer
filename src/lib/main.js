@@ -94,7 +94,23 @@ async function writeFilesToEnv(options) {
   }
 
 async function createUserEntry(body) {
-  let res = await axios.post(`http://localhost:18001/register`, body).catch(err => { console.log( chalk.red.bold(`${err}`) ); process.exit()})
+  let res = await axios.post(`http://localhost:18001/register`, body).catch(err => {
+    console.log(chalk.red.bold(`${err}`))
+    // console.log(chalk.red.bold(`${err.response.data.errors.source}`))
+    // if(err.response.data.errors.source){
+    //   let errors = err.response.data.errors.source
+    //   if(errors.email){
+    //     console.log(`%s email`, chalk.green.bold(`${errors.email}`));
+    //   }
+    //   if(errors.phone){
+    //     console.log(`%s phone`, chalk.green.bold(`${errors.phone}`));
+    //   }
+    //   if(errors.password){
+    //     console.log(`%s password`, chalk.green.bold(`${errors.password}`));
+    //   }
+    // }
+    process.exit()
+  })
   return res.data.data;
 }
 
@@ -106,7 +122,7 @@ async function setUp() {
    const status = new Spinner('Setting Up The Dorcas Requirements...');
    status.start();
    try {
-    const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory + `/docker-compose.yml`}`, `up`, `-d`, `core_${options.template}_web`,  `core_${options.template}_php`,  `dorcas_${options.template}_sql`, `dorcas_${options.template}_redis`, `dorcas_${options.template}_smtp`]);
+    const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory + `/docker-compose.yml`}`, `up`, `-d`, `core_${options.template}_web`,  `core_${options.template}_php`,  `dorcas_${options.template}_sql`, `dorcas_${options.template}_hub_sql`,`dorcas_${options.template}_redis`, `dorcas_${options.template}_smtp`]);
      ls.on('close', async code => {
          await status.stop()
          if(code === 0){
@@ -138,7 +154,7 @@ async function runHubDockerCompose(options){
     const status = new Spinner('Setting Up The Hub...');
     status.start();
     try{
-    const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory +`/docker-compose.yml`}`,`up`, `-d`, `hub_${options.template}_web`,`hub_${options.template}_php`, `dorcas_${options.template}_hub_sql`]);
+    const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory +`/docker-compose.yml`}`,`up`, `-d`, `hub_${options.template}_web`,`hub_${options.template}_php`]);
       ls.on('close', async code => {
         await status.stop();
         if(code === 0){
@@ -147,6 +163,31 @@ async function runHubDockerCompose(options){
         }
 
       });
+    }
+    catch(err){
+      await status.stop();
+    }
+    finally {
+
+    }
+
+
+}
+
+async function resetServices(options){
+    const status = new Spinner('Pulling Down Services...');
+    status.start();
+    try{
+    const ls = await spawn('docker-compose', [`-f`, `${options.targetDirectory +`/docker-compose.yml`}`,`down`, `-v`]);
+      ls.on('close', async code => {
+        await status.stop();
+        if(code === 0){
+          console.log('%s All  Services Removed', chalk.green.bold('Success'));
+          await runBaseDockerCompose(options)
+
+        }
+
+      })
     }
     catch(err){
       await status.stop();
@@ -215,7 +256,7 @@ async function finalUerSetup(options) {
         firstname: options.answers.firstname,
         lastname: options.answers.lastname,
         email: options.answers.email,
-        // installer: true,
+        installer: true,
         password: options.answers.password,
         company: options.answers.company,
         phone: options.answers.phone,
@@ -289,7 +330,7 @@ async function createProject(options) {
     await status.stop()
     process.exit(1);
   }
-  await runBaseDockerCompose(options)
+  await resetServices(options)
   return true;
  }
 
