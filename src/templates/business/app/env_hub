@@ -11,7 +11,7 @@ APP_URL=http://localhost:8001
 APP_URL_STATIC=http://localhost:8001
 DEPLOY_ENV=docker
 STANDARD_HOST=localhost:8001
-DORCAS_BASE_URL=http://core_web:80
+DORCAS_BASE_URL=http://core_business_web:80
 DORCAS_ENV=production
 
 

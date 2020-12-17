@@ -110,7 +110,7 @@ async function createUserEntry(body) {
     //   }
     // }
     process.exit()
-  })
+  });
   return res.data.data;
 }
 

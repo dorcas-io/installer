@@ -18,6 +18,8 @@ services:
       - business
 
   core_business_php:
+#     build:
+#       context: ../../../../dorcas-business-base
     image: dorcashub/dorcas-business-base
     restart: unless-stopped
     tty: true
@@ -56,7 +58,8 @@ services:
       - business
 
   hub_business_php:
-    # image: dorcashub/docker-business-hub:latest
+#    build:
+#      context: ../../../../dorcas-business-hub
     image: dorcashub/dorcas-business-hub
     restart: unless-stopped
     tty: true
