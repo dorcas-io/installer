@@ -1,19 +1,23 @@
 {
   "name": "dorcas-installer",
   "version": "1.0.0",
-  "description": "Dorcas business installer",
+  "description": "Dorcas Hub: Business Edition Installer",
   "main": "src/bin/dorcas.js",
   "bin": {
-    "dorcas": "src/bin/dorcas.js"
+    "install-dorcas-business": "src/bin/dorcas.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
     "dorcas",
+    "installer",
     "CLI"
   ],
-  "author": "Ayotomide Aina",
+  "contributors": [
+    "Ayotomide Aina",
+    "Bolaji Olawoye"
+  ],
   "license": "MIT",
   "dependencies": {
     "arg": "^4.1.3",
