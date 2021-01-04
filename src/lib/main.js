@@ -156,9 +156,9 @@ async function prepareContainersForHub(options) {
   status.start();
 
   try {
-    await checkDatabaseConnection(async function(result) {
+    await checkDatabaseConnectionCORE(async function(result) {
       if (result) {
-        await checkDatabaseTables(async function(result) {
+        await checkOAuthTablesCORE(async function(result) {
           if (result) {
             setTimeout(async () => {
               let res = await setupDorcasCoreOAuth(options);
@@ -166,7 +166,7 @@ async function prepareContainersForHub(options) {
               options.clientSecret = res.client_secret;
               if (typeof options.clientId !== "undefined") {
                 console.log(
-                  "%s Dorcas HUB OAuth Set",
+                  "%s Dorcas CORE OAuth Set",
                   chalk.green.bold("Success")
                 );
                 await setupDorcasHubENV(options);
@@ -180,9 +180,9 @@ async function prepareContainersForHub(options) {
             }, 3000);
           } else {
             setTimeout(async () => {
-              console.log("Creating Database tables");
+              console.log("Creating CORE OAuth Entries...");
               await status.stop();
-              await handleSetup(options);
+              await prepareContainersForHub(options);
             }, 3000);
           }
         });
@@ -190,7 +190,7 @@ async function prepareContainersForHub(options) {
         setTimeout(async () => {
           console.log("Retrying Database connection...");
           await status.stop();
-          await handleSetup(options);
+          await prepareContainersForHub(options);
         }, 3000);
       }
     });
@@ -220,7 +220,7 @@ async function installContainersForHub(options) {
           "%s Dorcas HUB Installation Complete",
           chalk.green.bold("Success")
         );
-        await finalUerSetup(options);
+        await setupAdminAccount(options);
       }
     });
   } catch (err) {
@@ -230,8 +230,8 @@ async function installContainersForHub(options) {
   }
 }
 
-async function finalUerSetup(options) {
-  const status = new Spinner("Setting Up User Credentials...");
+async function setupAdminAccount(options) {
+  const status = new Spinner("Creating Admin Login Account...");
   status.start();
   try {
     setTimeout(async () => {
@@ -247,10 +247,13 @@ async function finalUerSetup(options) {
         client_id: options.clientId,
         client_secret: options.clientSecret
       };
-      let res = await createUserEntry(data);
+      let res = await createUser(data);
       if (typeof res !== "undefined") {
         await status.stop();
-        console.log("%s You are all Set", chalk.green.bold("Success"));
+        console.log(
+          "%s Account Creation Successful!",
+          chalk.green.bold("Success")
+        );
         console.log("\n");
         console.log(
           "Thank You for Signing Up " +
@@ -266,7 +269,7 @@ async function finalUerSetup(options) {
   }
 }
 
-async function createUserEntry(body) {
+async function createUser(body) {
   let res = await axios
     .post(`http://localhost:18001/register`, body)
     .catch(err => {
@@ -289,7 +292,7 @@ async function setupDorcasHubENV(options) {
   fs.appendFileSync(sourcePath, envfile.stringify(data));
 }
 
-async function checkDatabaseConnection(callback) {
+async function checkDatabaseConnectionCORE(callback) {
   const connection = mysql.createConnection({
     host: "127.0.0.1",
     user: "root",
@@ -297,24 +300,30 @@ async function checkDatabaseConnection(callback) {
     port: "18008",
     database: "dorcas"
   });
-  const status = new Spinner("Connecting to Database...");
+  const status = new Spinner("Connecting to CORE Database...");
   status.start();
   connection.connect(async function(err) {
     if (err) {
       callback(false);
-      console.log("%s Connection Failed", chalk.red.bold("error"));
+      console.log(
+        "%s Database Connection to CORE Failed",
+        chalk.red.bold("error")
+      );
       connection.end();
       await status.stop();
     } else {
       await status.stop();
-      console.log("%s Connection Established", chalk.green.bold("success"));
+      console.log(
+        "%s Database Connection to CORE Established",
+        chalk.green.bold("success")
+      );
       connection.end();
       callback(true);
     }
   });
 }
 
-async function checkDatabaseTables(callback) {
+async function checkOAuthTablesCORE(callback) {
   const connection = mysql.createConnection({
     host: "127.0.0.1",
     user: "root",
@@ -322,7 +331,7 @@ async function checkDatabaseTables(callback) {
     port: "18008",
     database: "dorcas"
   });
-  const status = new Spinner("Connecting to Database...");
+  const status = new Spinner("Connecting to CORE Database...");
   status.start();
   connection.query("SELECT * FROM oauth_clients", async function(
     err,
