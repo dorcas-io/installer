@@ -4,8 +4,7 @@
 Dorcas Installer
 */
 
-// require = require('esm')(module /*, options*/);
 const path = require("path");
 
-// cli(process)
+// CLI Processor
 require(path.join(__dirname, "../lib/cli.js")).cli(process.argv);

@@ -3,15 +3,15 @@ exports.inquiries = [
     name: "template",
     type: "list",
     message: "What version of the Business Edition do you wish to install? ",
-    choices: ["business", "developer"],
-    default: "business"
+    choices: ["production", "development"],
+    default: "production"
   },
   {
     name: "firstname",
     type: "input",
     message: "Please enter your First Name",
     when: answers =>
-      answers.template === "business" || answers.template === "developer",
+      answers.template === "production" || answers.template === "development",
     validate: function(value) {
       if (value.length) {
         return true;
@@ -25,7 +25,7 @@ exports.inquiries = [
     type: "input",
     message: "Please enter your Last Name ",
     when: answers =>
-      answers.template === "business" || answers.template === "developer",
+      answers.template === "production" || answers.template === "development",
     validate: function(value) {
       if (value.length) {
         return true;
@@ -64,8 +64,7 @@ exports.inquiries = [
     name: "company",
     type: "input",
     message: "Enter your Company or Business Name?",
-    default: "Developer",
-    when: answers => answers.template === "business",
+    when: answers => answers.template === "production",
     validate: function(value) {
       if (value.length) {
         return true;
@@ -79,7 +78,7 @@ exports.inquiries = [
     type: "input",
     message: "Please enter your Phone Number ",
     when: answers =>
-      answers.template === "business" || answers.template === "developer",
+      answers.template === "production" || answers.template === "development",
     validate: function(value) {
       if (value.length) {
         return true;
@@ -93,7 +92,7 @@ exports.inquiries = [
     type: "list",
     message: "Please select your needed features",
     default: "all",
-    when: answers => answers.template === "business",
+    when: answers => answers.template === "production",
     choices: [
       {
         name: "All Features",

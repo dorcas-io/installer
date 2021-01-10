@@ -1,0 +1,175 @@
+version: "3"
+
+services:
+  business_proxy:
+    container_name: business_proxy
+    image: jwilder/nginx-proxy
+    ports:
+      - "18000:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - dorcas
+
+  business_reloader:
+    container_name: business_livereloader
+    image: apogiatzis/livereloading
+    privileged: true
+    environment:
+      - RELOAD_CONTAINER=business_hub_php
+      - RELOAD_DELAY=5
+    #    - RELOAD_DIR="../../Hub/hub-business/app"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    #    - "../../Hub/hub-business:/var/www"
+
+  business_core_php:
+    container_name: business_core_php
+    image: dorcas-core-business:local
+    #build:
+    #  context: ../../Core/core-business
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: business_core_php
+      SERVICE_TAGS: dev
+    working_dir: /var/www/dorcas-business-core
+    env_file: ./app/env_core_production
+    volumes:
+      #      - ./src/core:/var/www
+      - ./app/env_core_production:/var/www/dorcas-business-core/.env
+      - ./app/local.ini:/usr/local/etc/php/conf.d/local.ini
+      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    depends_on:
+      - business_mysql
+      - business_redis
+      - business_smtp
+    networks:
+      - dorcas
+
+  business_core_web:
+    container_name: business_core_web
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "${SERVICE_CORE_WEB_PORT}:80"
+    volumes:
+      - ${PWD}/src/core:/var/www/dorcas-business-core
+      # - ${PWD}/nginx/core/default.conf.template:/etc/nginx/conf.d/default.conf.template
+      #- ${PWD}/nginx/core/default.conf.template:/etc/nginx/templates/default.conf.template
+      - ${PWD}/nginx/core:/etc/nginx/templates/"
+      # - ${PWD}/nginx/entrypoint-core.sh:/entrypoint.sh
+      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    depends_on:
+      - business_core_php
+    networks:
+      - dorcas
+    environment:
+      - VIRTUAL_HOST=core.dorcashub.test
+      - SERVICE_CORE_PHP_NAME=${SERVICE_CORE_PHP_NAME}
+    #command: /bin/sh -c "export SERVICE_CORE_PHP_NAME && envsubst '${SERVICE_CORE_PHP_NAME}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+
+  business_hub_php:
+    container_name: business_hub_php
+    # image: dorcashub/docker-business-hub:latest
+    image: dorcas-hub-business:local
+    #build:
+    #  context: ../../Hub/hub-business
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: business_hub_php
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    env_file: ./app/env_hub_production
+    volumes:
+      #  - ../../Hub/hub-business:/var/www
+      - ./app/env_hub_production:/var/www/.env
+      - ./app/local.ini:/usr/local/etc/php/conf.d/local.ini
+      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    #command: "composer install"
+    depends_on:
+      - business_mysql
+      - business_redis
+    # - dorcas_business_smtp
+    # command: "php artisan storage:link"
+    networks:
+      - dorcas
+
+  business_hub_web:
+    container_name: business_hub_web
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "${SERVICE_HUB_WEB_PORT}:80"
+    volumes:
+      - ./src/hub:/var/www
+      - ./web/nginx_hub.conf:/etc/nginx/conf.d/default.conf
+      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    depends_on:
+      - business_hub_php
+      - business_core_web
+    networks:
+      - dorcas
+    environment:
+      - VIRTUAL_HOST=dorcashub.test,store.dorcashub.test,blog.dorcashub.test
+
+  business_mysql:
+    container_name: business_mysql
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    # tty: true
+    ports:
+      - "${SERVICE_MYSQL_PORT}:3306"
+    volumes:
+      - dorcas_business_databases:/var/lib/mysql
+      - ${PWD}/mysql/core.sql:/docker-entrypoint-initdb.d/core.sql
+      - ${PWD}/mysql/hub.sql:/docker-entrypoint-initdb.d/hub.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${SERVICE_MYSQL_PASSWORD}
+      # - MYSQL_DATABASE=dorcas
+      - VIRTUAL_HOST=mysql.dorcashub.test
+      - SERVICE_NAME=business_mysql
+    networks:
+      - dorcas
+
+  business_redis:
+    container_name: business_redis
+    image: redis:5.0-alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "${SERVICE_REDIS_PORT}:6379"
+    volumes:
+      #  - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/data:/data
+    networks:
+      - dorcas
+    environment:
+      - VIRTUAL_HOST=redis.dorcashub.test
+
+  business_smtp:
+    container_name: business_smtp
+    image: mailhog/mailhog:latest
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "${SERVICE_SMTP_PORT}:1025"
+      - "18825:8025"
+    networks:
+      - dorcas
+    environment:
+      - VIRTUAL_HOST=smtp.dorcashub.test
+
+volumes:
+  dorcas_business_databases:
+    driver: local
+  hub_database:
+    driver: local
+
+networks:
+  dorcas:
+    driver: bridge

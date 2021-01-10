@@ -21,7 +21,7 @@ async function cli(args) {
   }
 
   async function promptForMissingOptions(options) {
-    const defaultTemplate = "business";
+    const defaultTemplate = "production";
     if (options.skipInputs) {
       return {
         ...options,
