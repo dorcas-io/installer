@@ -25,7 +25,7 @@ services:
 
   business_core_php:
     container_name: business_core_php
-    image: dorcas-core-business:local
+    image: dorcashub/dorcas-core-business:dev
     #build:
     #  context: ../../Core/core-business
     restart: unless-stopped
@@ -49,18 +49,15 @@ services:
 
   business_core_web:
     container_name: business_core_web
-    image: nginx:stable-alpine
+    build:
+      context: ./nginx/core
     restart: unless-stopped
     tty: true
     ports:
       - "${SERVICE_CORE_WEB_PORT}:80"
-    volumes:
-      - ${PWD}/src/core:/var/www/dorcas-business-core
-      # - ${PWD}/nginx/core/default.conf.template:/etc/nginx/conf.d/default.conf.template
-      #- ${PWD}/nginx/core/default.conf.template:/etc/nginx/templates/default.conf.template
-      - ${PWD}/nginx/core:/etc/nginx/templates/"
-      # - ${PWD}/nginx/entrypoint-core.sh:/entrypoint.sh
-      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    #volumes:
+    # - ${PWD}/nginx/entrypoint-core.sh:/entrypoint.sh
+    #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
     depends_on:
       - business_core_php
     networks:
@@ -68,12 +65,10 @@ services:
     environment:
       - VIRTUAL_HOST=core.dorcashub.test
       - SERVICE_CORE_PHP_NAME=${SERVICE_CORE_PHP_NAME}
-    #command: /bin/sh -c "export SERVICE_CORE_PHP_NAME && envsubst '${SERVICE_CORE_PHP_NAME}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
 
   business_hub_php:
     container_name: business_hub_php
-    # image: dorcashub/docker-business-hub:latest
-    image: dorcas-hub-business:local
+    image: dorcashub/dorcas-hub-business:dev
     #build:
     #  context: ../../Hub/hub-business
     restart: unless-stopped
@@ -81,11 +76,11 @@ services:
     environment:
       SERVICE_NAME: business_hub_php
       SERVICE_TAGS: dev
-    working_dir: /var/www
+    working_dir: /var/www/dorcas-business-hub
     env_file: ./app/env_hub_production
     volumes:
       #  - ../../Hub/hub-business:/var/www
-      - ./app/env_hub_production:/var/www/.env
+      - ./app/env_hub_production:/var/www/dorcas-business-hub/.env
       - ./app/local.ini:/usr/local/etc/php/conf.d/local.ini
       #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
     #command: "composer install"
@@ -99,15 +94,15 @@ services:
 
   business_hub_web:
     container_name: business_hub_web
-    image: nginx:stable-alpine
+    build:
+      context: ./nginx/hub
     restart: unless-stopped
     tty: true
     ports:
       - "${SERVICE_HUB_WEB_PORT}:80"
-    volumes:
-      - ./src/hub:/var/www
-      - ./web/nginx_hub.conf:/etc/nginx/conf.d/default.conf
-      #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    #volumes:
+    # - ${PWD}/nginx/entrypoint-hub.sh:/entrypoint.sh
+    #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
     depends_on:
       - business_hub_php
       - business_core_web
@@ -115,10 +110,13 @@ services:
       - dorcas
     environment:
       - VIRTUAL_HOST=dorcashub.test,store.dorcashub.test,blog.dorcashub.test
+      - SERVICE_HUB_PHP_NAME=${SERVICE_HUB_PHP_NAME}
 
   business_mysql:
     container_name: business_mysql
-    image: mysql:5.7
+    #image: mysql:5.7
+    build:
+      context: ./mysql/
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     # tty: true
@@ -126,11 +124,11 @@ services:
       - "${SERVICE_MYSQL_PORT}:3306"
     volumes:
       - dorcas_business_databases:/var/lib/mysql
-      - ${PWD}/mysql/core.sql:/docker-entrypoint-initdb.d/core.sql
-      - ${PWD}/mysql/hub.sql:/docker-entrypoint-initdb.d/hub.sql
+      #- ${PWD}/mysql/core.sql:/docker-entrypoint-initdb.d/core.sql
+      #- ${PWD}/mysql/hub.sql:/docker-entrypoint-initdb.d/hub.sql
     environment:
       - MYSQL_ROOT_PASSWORD=${SERVICE_MYSQL_PASSWORD}
-      # - MYSQL_DATABASE=dorcas
+      #- MYSQL_DATABASE=dorcas
       - VIRTUAL_HOST=mysql.dorcashub.test
       - SERVICE_NAME=business_mysql
     networks:

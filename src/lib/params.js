@@ -9,7 +9,8 @@ var params = {
     port: 18030,
     path_core_oauth_setup: "setup",
     path_core_user_register: "register",
-    path_hub_admin_login: "login"
+    path_hub_admin_login: "login",
+    default_domain: "dorcas-demo.test"
   },
   versions: {
     production: {

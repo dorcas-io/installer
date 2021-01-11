@@ -1,6 +1,7 @@
 const arg = require("arg");
 const inquirer = require("inquirer");
 const path = require("path");
+const params = require(path.join(__dirname, "./params.js"));
 const main = require(path.join(__dirname, "./main.js"));
 const inquiries = require(path.join(__dirname, "./inquirer.js"));
 

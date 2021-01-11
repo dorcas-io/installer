@@ -1,3 +1,6 @@
+const path = require("path");
+const params = require(path.join(__dirname, "./params.js"));
+
 exports.inquiries = [
   {
     name: "template",
@@ -51,12 +54,12 @@ exports.inquiries = [
   {
     name: "password",
     type: "password",
-    message: "Please enter your Login Password ",
+    message: "Please enter your Login Password (8 characters minimum)",
     validate: function(value) {
-      if (value.length) {
+      if (value.length && value.length >= 8) {
         return true;
       } else {
-        return "Required! Please enter your Login Password ";
+        return "Required! Please enter your Login Password (8 characters minimum)";
       }
     }
   },
@@ -70,6 +73,21 @@ exports.inquiries = [
         return true;
       } else {
         return "Required! Enter your Company or Business Name";
+      }
+    }
+  },
+  {
+    name: "domain",
+    type: "input",
+    message: "Enter a Domain Name for this installation",
+    when: answers =>
+      answers.template === "production" || answers.template === "development",
+    default: params.general.default_domain,
+    validate: function(value) {
+      if (value.length) {
+        return true;
+      } else {
+        return "Required! Enter a Domain Name for this installation";
       }
     }
   },

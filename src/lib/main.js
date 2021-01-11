@@ -47,13 +47,14 @@ async function createProject(options) {
   try {
     await installTemplateFiles(options);
 
-    // await access(templateDir, fs.constants.R_OK, (err) => {
-    //   console.log('\n> Checking Template Access Permissions...');
-    //   if (err)
-    //     console.error('Access Not OK' + err);
-    //   else
-    //     console.log('Access OK');
-    // });
+    console.log(
+      "%s " +
+        options.template.toUpperCase() +
+        " Version Template Files Installed",
+      chalk.green.bold("Success")
+    );
+
+    await access(templateDir, fs.constants.R_OK);
 
     await setupInstallationENV(options);
 
@@ -73,23 +74,9 @@ async function createProject(options) {
 }
 
 async function installTemplateFiles(options) {
-  await copy(
-    options.templateDirectory,
-    options.targetDirectory,
-    { clobber: false },
-    function(err) {
-      if (err) {
-        console.log(chalk.red.bold(`${err}`));
-        process.exit(1);
-      }
-      console.log(
-        "%s " +
-          options.template.toUpperCase() +
-          " Version Template Files Installed",
-        chalk.green.bold("Success")
-      );
-    }
-  );
+  await copy(options.templateDirectory, `${options.targetDirectory}`, {
+    clobber: false
+  });
 }
 
 async function setupInstallationENV(options) {
@@ -128,7 +115,7 @@ async function setupInstallationENV(options) {
     } else {
       //status.stop;
       console.log(
-        "%s Installation ENV successfully set Installed",
+        "%s Installation ENV successfully Set",
         chalk.green.bold("Success")
       );
     }
@@ -175,15 +162,21 @@ async function installContainerServices(options) {
 async function installContainersForCore(options, params) {
   const status = new Spinner("Installing Containers for Dorcas CORE");
   status.start();
+
+  await setupCoreENV(options);
+
+  console.log("%s Dorcas CORE ENV Setup Complete", chalk.green.bold("Success"));
+
   try {
     // add `-d`, flag back
     const ls = spawn("docker-compose", [
       `--env-file`,
-      `${options.targetDirectory + `/.env`}`,
+      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
       `-f`,
       `${options.targetDirectory + `/docker-compose.yml`}`,
       `up`,
       `-d`,
+      `--build`,
       `${params.docker.services.core_php.name}`,
       `${params.docker.services.core_web.name}`,
       `${params.docker.services.mysql.name}`,
@@ -246,7 +239,7 @@ async function prepareContainersForHub(options) {
                   "%s Dorcas CORE OAuth Set",
                   chalk.green.bold("Success")
                 );
-                await setupDorcasHubENV(options);
+                await setupHubENV(options);
                 await status.stop();
                 console.log(
                   "%s Dorcas HUB ENV Set",
@@ -268,7 +261,7 @@ async function prepareContainersForHub(options) {
           console.log("Retrying connection...");
           await status.stop();
           await prepareContainersForHub(options);
-        }, 3000);
+        }, 7500);
       }
     });
   } catch (e) {
@@ -284,11 +277,12 @@ async function installContainersForHub(options) {
   try {
     const ls = await spawn("docker-compose", [
       `--env-file`,
-      `${options.targetDirectory + `/.env`}`,
+      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
       `-f`,
       `${options.targetDirectory + `/docker-compose.yml`}`,
       `up`,
       `-d`,
+      `--build`,
       `${params.docker.services.hub_php.name}`,
       `${params.docker.services.hub_web.name}`
     ]);
@@ -318,7 +312,8 @@ async function setupAdminAccount(options) {
         firstname: options.answers.firstname,
         lastname: options.answers.lastname,
         email: options.answers.email,
-        installer: true,
+        installer: "true",
+        domain: options.answers.domain,
         password: options.answers.password,
         company: options.answers.company,
         phone: options.answers.phone,
@@ -337,7 +332,7 @@ async function setupAdminAccount(options) {
         console.log(
           "Dear " +
             res.firstname +
-            "(" +
+            " (" +
             res.email +
             "), " +
             "thank you for installing the Dorcas Hub." +
@@ -352,49 +347,98 @@ async function setupAdminAccount(options) {
                 params.general.path_hub_admin_login
             ) +
             " and login with your earlier provided Admin " +
-            chalk.green.italic("email") +
+            chalk.green.bold("email") +
             " and " +
-            chalk.green.italic("password") +
+            chalk.green.bold("password") +
             "."
         );
+        console.log("\n");
       }
-    }, 2000);
+    }, 7500);
   } catch (err) {
     await status.stop();
   }
 }
 
 async function createUser(body) {
-  let res = await axios
-    .post(
-      params.general.http_scheme +
-        "://" +
-        params.general.host +
-        ":" +
-        params.docker.services.core_web.port +
-        "/" +
-        params.general.path_core_user_register,
-      body
-    )
-    .catch(err => {
-      console.log(chalk.red.bold(`${err}`));
-      process.exit();
-    });
+  let create_url =
+    params.general.http_scheme +
+    "://" +
+    params.general.host +
+    ":" +
+    params.docker.services.core_web.port +
+    "/" +
+    params.general.path_core_user_register;
+
+  let res = await axios.post(create_url, body).catch(err => {
+    console.log(chalk.red.bold(`${err}`));
+    process.exit();
+  });
   return res.data.data;
 }
 
 //this appends env credentials for clientid and secret to env_hub
-async function setupDorcasHubENV(options) {
+async function setupHubENV(options) {
   let sourcePath =
     options.targetDirectory + `/app/env_hub_` + options.template.toLowerCase();
+
+  let host_url = params.general.http_scheme + "://" + params.general.host;
+
   let data = {
+    APP_NAME: "Hub",
+    APP_ENV: "production",
+    APP_KEY: "base64:I3NFdR+AFWLg8OlU535RGibdUiJlFhQzoHTyhVylNec=",
+    APP_DEBUG: "true",
+    APP_LOG_LEVEL: "debug",
+    SDK_HOST_PRODUCTION:
+      "http://" + params.docker.services.core_web.name + ":80",
+    APP_URL: host_url + ":" + params.docker.services.hub_web.port,
+    APP_URL_STATIC: host_url + ":" + params.docker.services.hub_web.port,
+    DEPLOY_ENV: "docker",
+    STANDARD_HOST: "localhost:" + params.docker.services.hub_web.port,
+    DORCAS_BASE_URL: "http://" + params.docker.services.core_web.name + ":80",
+    DORCAS_BASE_DOMAIN: options.answers.domain,
+    DORCAS_ENV: "production",
+    DB_CONNECTION: "mysql",
+    DB_HOST: params.docker.services.mysql.name,
+    DB_PORT: "3306",
+    DB_DATABASE: params.docker.services.mysql.db_hub,
+    DB_USERNAME: params.docker.services.mysql.user,
+    DB_PASSWORD: params.docker.services.mysql.password,
+    BROADCAST_DRIVER: "pusher",
+    CACHE_DRIVER: "redis",
+    QUEUE_DRIVER: "redis",
+    FILESYSTEM_DRIVER: "file",
+    SESSION_DRIVER: "redis",
+    SESSION_LIFETIME: "120",
+    SESSION_CONNECTION: "default",
+    REDIS_HOST: params.docker.services.redis.name,
+    REDIS_PASSWORD: "null",
+    REDIS_PORT: "6379",
+    REDIS_CLIENT: "predis",
+    MAIL_DRIVER: "smtp",
+    MAIL_HOST: params.docker.services.smtp.name,
+    MAIL_PORT: "1025",
     DORCAS_CLIENT_ID: options.clientId,
     DORCAS_CLIENT_SECRET: options.clientSecret,
     DORCAS_PERSONAL_CLIENT_ID: options.clientId,
     DORCAS_PERSONAL_CLIENT_SECRET: options.clientSecret
   };
 
-  fs.appendFileSync(sourcePath, envfile.stringify(data));
+  fs.writeFile(sourcePath, envfile.stringify(data), err => {
+    if (err) {
+      console.log(chalk.red.bold(`${err}`));
+      //status.stop;
+      process.exit(1);
+      //throw err;
+    } else {
+      //status.stop;
+      console.log(
+        "%s Hub ENV successfully Installed",
+        chalk.green.bold("Success")
+      );
+    }
+  });
 }
 
 async function checkDatabaseConnectionCORE(callback) {
@@ -458,19 +502,19 @@ async function checkOAuthTablesCORE(callback) {
 }
 
 async function setupDorcasCoreOAuth(options) {
-  let res = await axios
-    .post(
-      params.general.http_scheme +
-        "://" +
-        params.general.host +
-        ":" +
-        params.docker.services.core_web.port +
-        "/" +
-        params.general.path_core_oauth_setup
-    )
-    .catch(err => {
-      console.log(chalk.red.bold(`${err}`));
-    });
+  let setup_url =
+    params.general.http_scheme +
+    "://" +
+    params.general.host +
+    ":" +
+    params.docker.services.core_web.port +
+    "/" +
+    params.general.path_core_oauth_setup;
+  //console.log(setup_url);
+  let res = await axios.post(setup_url).catch(err => {
+    console.log(chalk.red.bold(`${err}`));
+    process.exit(1);
+  });
   return res.data;
 }
 
@@ -484,6 +528,64 @@ async function downloadPublicFiles(options) {
       console.log(err ? "Error" : "Success");
     }
   ); //not working  o
+}
+
+async function setupCoreENV(options) {
+  let sourcePath =
+    options.targetDirectory + `/app/env_core_` + options.template.toLowerCase();
+
+  let host_url = params.general.http_scheme + "://" + params.general.host;
+
+  let data = {
+    APP_NAME: "Dorcas",
+    APP_ENV: "production",
+    APP_KEY: "base64:qY8iqi+rdNRCoIwJMHOSIJttWywy5F2TRQDj8H2ju9g=",
+    APP_DEBUG: "true",
+    APP_LOG_LEVEL: "debug",
+    DORCAS_HOST_API: host_url + ":" + params.docker.services.core_web.port,
+    DORCAS_HOST_HUB: host_url + ":" + params.docker.services.hub_web.port,
+    DORCAS_BASE_DOMAIN: options.answers.domain,
+    APP_URL: host_url + ":" + params.docker.services.core_web.port,
+    APP_SITE_URL: host_url + ":" + params.docker.services.hub_web.port,
+    APP_URL_STATIC: host_url + ":" + params.docker.services.core_web.port,
+    DEPLOY_ENV: "docker",
+    DB_CONNECTION: "mysql",
+    DB_HOST: params.docker.services.mysql.name,
+    DB_PORT: "3306",
+    DB_DATABASE: params.docker.services.mysql.db_core,
+    DB_USERNAME: params.docker.services.mysql.user,
+    DB_PASSWORD: params.docker.services.mysql.password,
+    DB_HUB_HOST: params.docker.services.mysql.name,
+    DB_HUB_PORT: "3306",
+    DB_HUB_DATABASE: params.docker.services.mysql.db_hub,
+    DB_HUB_USERNAME: params.docker.services.mysql.user,
+    DB_HUB_PASSWORD: params.docker.services.mysql.password,
+    CACHE_DRIVER: "redis",
+    QUEUE_DRIVER: "redis",
+    FILESYSTEM_DRIVER: "file",
+    REDIS_HOST: params.docker.services.redis.name,
+    REDIS_PASSWORD: "null",
+    REDIS_PORT: "6379",
+    REDIS_CLIENT: "predis",
+    MAIL_DRIVER: "smtp",
+    MAIL_HOST: params.docker.services.smtp.name,
+    MAIL_PORT: "1025"
+  };
+
+  await fs.writeFile(sourcePath, envfile.stringify(data), err => {
+    if (err) {
+      console.log(chalk.red.bold(`${err}`));
+      //status.stop;
+      process.exit(1);
+      //throw err;
+    } else {
+      //status.stop;
+      console.log(
+        "%s Core ENV successfully Installed",
+        chalk.green.bold("Success")
+      );
+    }
+  });
 }
 
 exports.createProject = createProject;
