@@ -142,7 +142,8 @@ async function installContainerServices(options) {
       `-f`,
       `${options.targetDirectory + `/docker-compose.yml`}`,
       `down`,
-      `-v`
+      `-v`,
+      `--remove-orphans`
     ]);
     ls.on("close", async code => {
       status.stop();

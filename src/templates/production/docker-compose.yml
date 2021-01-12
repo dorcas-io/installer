@@ -2,7 +2,7 @@ version: "3"
 
 services:
   business_proxy:
-    container_name: ${SERVICE_PROXY_NAME}
+    container_name: "${SERVICE_PROXY_NAME}"
     image: ${SERVICE_PROXY_IMAGE}
     ports:
       - "${SERVICE_PROXY_PORT}:80"
@@ -12,14 +12,14 @@ services:
       - dorcas
 
   business_core_php:
-    container_name: ${SERVICE_CORE_PHP_NAME}
-    image: ${SERVICE_CORE_PHP_IMAGE}
+    container_name: "${SERVICE_CORE_PHP_NAME}"
+    image: "${SERVICE_CORE_PHP_IMAGE}"
     restart: unless-stopped
     tty: true
     environment:
-      SERVICE_NAME: ${SERVICE_CORE_PHP_NAME}
+      SERVICE_NAME: "${SERVICE_CORE_PHP_NAME}"
       SERVICE_TAGS: dev
-    working_dir: ${SERVICE_CORE_PHP_WORKING_DIR}
+    working_dir: "${SERVICE_CORE_PHP_WORKING_DIR}"
     env_file: ./app/env_core_production
     volumes:
       #      - ./src/core:/var/www
@@ -150,8 +150,6 @@ services:
 
 volumes:
   dorcas_business_databases:
-    driver: local
-  hub_database:
     driver: local
 
 networks:
