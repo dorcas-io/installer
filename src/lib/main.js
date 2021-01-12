@@ -95,10 +95,20 @@ async function setupInstallationENV(options) {
     SERVICE_CORE_PHP_PORT: params.docker.services.core_php.port,
     SERVICE_CORE_PHP_IMAGE: params.docker.services.core_php.image,
     SERVICE_CORE_PHP_WORKING_DIR: params.docker.services.core_php.working_dir,
+    SERVICE_CORE_PHP_ENV_FILE: params.docker.services.core_php.env_file,
+    SERVICE_CORE_PHP_VOLUMES_ENV: params.docker.services.core_php.volumes_env,
+    SERVICE_CORE_PHP_VOLUMES_PHP_INI:
+      params.docker.services.core_php.volumes_php_ini,
     SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
     SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
     SERVICE_HUB_PHP_NAME: params.docker.services.hub_php.name,
     SERVICE_HUB_PHP_PORT: params.docker.services.hub_php.port,
+    SERVICE_HUB_PHP_IMAGE: params.docker.services.hub_php.image,
+    SERVICE_HUB_PHP_WORKING_DIR: params.docker.services.hub_php.working_dir,
+    SERVICE_HUB_PHP_ENV_FILE: params.docker.services.hub_php.env_file,
+    SERVICE_HUB_PHP_VOLUMES_ENV: params.docker.services.hub_php.volumes_env,
+    SERVICE_HUB_PHP_VOLUMES_PHP_INI:
+      params.docker.services.hub_php.volumes_php_ini,
     SERVICE_HUB_WEB_NAME: params.docker.services.hub_web.name,
     SERVICE_HUB_WEB_PORT: params.docker.services.hub_web.port,
     SERVICE_MYSQL_NAME: params.docker.services.mysql.name,
@@ -109,8 +119,11 @@ async function setupInstallationENV(options) {
     SERVICE_MYSQL_DB_HUB: params.docker.services.mysql.db_hub,
     SERVICE_REDIS_NAME: params.docker.services.redis.name,
     SERVICE_REDIS_PORT: params.docker.services.redis.port,
+    SERVICE_REDIS_IMAGE: params.docker.services.redis.image,
     SERVICE_SMTP_NAME: params.docker.services.smtp.name,
-    SERVICE_SMTP_PORT: params.docker.services.smtp.port
+    SERVICE_SMTP_PORT: params.docker.services.smtp.port,
+    SERVICE_SMTP_PORT_2: params.docker.services.smtp.port_2,
+    SERVICE_SMTP_IMAGE: params.docker.services.smtp.image
   };
 
   await fs.writeFile(sourcePath, envfile.stringify(data), err => {

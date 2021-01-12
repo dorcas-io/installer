@@ -50,7 +50,11 @@ var params = {
         name: "business_core_php",
         port: 18031,
         image: "dorcashub/dorcas-core-business:dev",
-        working_dir: "/var/www/dorcas-business-core"
+        working_dir: "/var/www/dorcas-business-core",
+        env_file: "./app/env_core_production",
+        volumes_env:
+          "./app/env_core_production:/var/www/dorcas-business-core/.env",
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
       },
       core_web: {
         name: "business_core_web",
@@ -58,7 +62,13 @@ var params = {
       },
       hub_php: {
         name: "business_hub_php",
-        port: 18033
+        port: 18033,
+        image: "dorcashub/dorcas-hub-business:dev",
+        working_dir: "/var/www/dorcas-business-hub",
+        env_file: "./app/env_hub_production",
+        volumes_env:
+          "./app/env_hub_production:/var/www/dorcas-business-hub/.env",
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
       },
       hub_web: {
         name: "business_hub_web",
@@ -75,15 +85,19 @@ var params = {
       },
       redis: {
         name: "business_redis",
-        port: 18036
+        port: 18036,
+        image: "redis:5.0-alpine"
       },
       smtp: {
         name: "business_smtp",
-        port: 18037
+        port: 18037,
+        port_2: 18038,
+        image: "mailhog/mailhog:latest"
       },
       reloader: {
         name: "business_reloader",
-        port: 18038
+        port: 18039,
+        image: ""
       }
     }
   }
