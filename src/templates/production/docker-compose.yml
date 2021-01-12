@@ -2,38 +2,24 @@ version: "3"
 
 services:
   business_proxy:
-    container_name: business_proxy
-    image: jwilder/nginx-proxy
+    container_name: "${SERVICE_PROXY_NAME}"
+    image: ${SERVICE_PROXY_IMAGE}
     ports:
-      - "18000:80"
+      - "${SERVICE_PROXY_PORT}:80"
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - dorcas
 
-  business_reloader:
-    container_name: business_livereloader
-    image: apogiatzis/livereloading
-    privileged: true
-    environment:
-      - RELOAD_CONTAINER=business_hub_php
-      - RELOAD_DELAY=5
-    #    - RELOAD_DIR="../../Hub/hub-business/app"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-    #    - "../../Hub/hub-business:/var/www"
-
   business_core_php:
-    container_name: business_core_php
-    image: dorcashub/dorcas-core-business:dev
-    #build:
-    #  context: ../../Core/core-business
+    container_name: "${SERVICE_CORE_PHP_NAME}"
+    image: "${SERVICE_CORE_PHP_IMAGE}"
     restart: unless-stopped
     tty: true
     environment:
-      SERVICE_NAME: business_core_php
+      SERVICE_NAME: "${SERVICE_CORE_PHP_NAME}"
       SERVICE_TAGS: dev
-    working_dir: /var/www/dorcas-business-core
+    working_dir: "${SERVICE_CORE_PHP_WORKING_DIR}"
     env_file: ./app/env_core_production
     volumes:
       #      - ./src/core:/var/www
@@ -164,8 +150,6 @@ services:
 
 volumes:
   dorcas_business_databases:
-    driver: local
-  hub_database:
     driver: local
 
 networks:

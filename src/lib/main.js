@@ -86,8 +86,15 @@ async function setupInstallationENV(options) {
   let sourcePath =
     options.targetDirectory + `/.env.` + options.template.toLowerCase();
   let data = {
+    SERVICE_PROXY_NAME: params.docker.services.proxy.name,
+    SERVICE_PROXY_PORT: params.docker.services.proxy.port,
+    SERVICE_PROXY_IMAGE: params.docker.services.proxy.image,
+    SERVICE_RELOADER_NAME: params.docker.services.reloader.name,
+    SERVICE_RELOADER_PORT: params.docker.services.reloader.port,
     SERVICE_CORE_PHP_NAME: params.docker.services.core_php.name,
     SERVICE_CORE_PHP_PORT: params.docker.services.core_php.port,
+    SERVICE_CORE_PHP_IMAGE: params.docker.services.core_php.image,
+    SERVICE_CORE_PHP_WORKING_DIR: params.docker.services.core_php.working_dir,
     SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
     SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
     SERVICE_HUB_PHP_NAME: params.docker.services.hub_php.name,
@@ -135,7 +142,8 @@ async function installContainerServices(options) {
       `-f`,
       `${options.targetDirectory + `/docker-compose.yml`}`,
       `down`,
-      `-v`
+      `-v`,
+      `--remove-orphans`
     ]);
     ls.on("close", async code => {
       status.stop();
@@ -177,6 +185,7 @@ async function installContainersForCore(options, params) {
       `up`,
       `-d`,
       `--build`,
+      `${params.docker.services.proxy.name}`,
       `${params.docker.services.core_php.name}`,
       `${params.docker.services.core_web.name}`,
       `${params.docker.services.mysql.name}`,

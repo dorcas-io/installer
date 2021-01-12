@@ -44,7 +44,15 @@ exports.inquiries = [
       "Please enter your Email Address (will be used as Admin/Login account) ",
     validate: function(value) {
       if (value.length) {
-        return true;
+        if (
+          /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(
+            value
+          )
+        ) {
+          return true;
+        } else {
+          return "Check! Please enter a valid Email Address ";
+        }
       } else {
         return "Required! Please enter your Email Address ";
       }
@@ -98,10 +106,10 @@ exports.inquiries = [
     when: answers =>
       answers.template === "production" || answers.template === "development",
     validate: function(value) {
-      if (value.length) {
+      if (value.length && value.length >= 8 && value.length < 14) {
         return true;
       } else {
-        return "Required! Please enter your Phone Number";
+        return "Required! Please enter your Phone Number (8 - 14 characters)";
       }
     }
   },
