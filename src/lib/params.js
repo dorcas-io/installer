@@ -43,11 +43,14 @@ var params = {
     services: {
       proxy: {
         name: "business_proxy",
-        port: 18030
+        port: 18030,
+        image: "jwilder/nginx-proxy"
       },
       core_php: {
         name: "business_core_php",
-        port: 18031
+        port: 18031,
+        image: "dorcashub/dorcas-core-business:dev",
+        working_dir: "/var/www/dorcas-business-core"
       },
       core_web: {
         name: "business_core_web",
