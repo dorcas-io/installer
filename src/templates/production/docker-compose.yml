@@ -47,7 +47,7 @@ services:
     networks:
       - dorcas
     environment:
-      - VIRTUAL_HOST=core.dorcashub.test
+      - VIRTUAL_HOST="${SERVICE_CORE_WEB_SUBDOMAIN}.${HOST_DOMAIN}"
       - SERVICE_CORE_PHP_NAME=${SERVICE_CORE_PHP_NAME}
 
   business_hub_php:

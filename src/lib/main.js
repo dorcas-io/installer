@@ -56,6 +56,8 @@ async function createProject(options) {
 
     await access(templateDir, fs.constants.R_OK);
 
+    //await downloadPublicFiles(options);
+
     await setupInstallationENV(options);
 
     status.stop();
@@ -69,6 +71,8 @@ async function createProject(options) {
   }
 
   await installContainerServices(options);
+
+  await installDNSResolver(options);
 
   return true;
 }
@@ -86,6 +90,7 @@ async function setupInstallationENV(options) {
   let sourcePath =
     options.targetDirectory + `/.env.` + options.template.toLowerCase();
   let data = {
+    HOST_DOMAIN: options.answers.domain,
     SERVICE_PROXY_NAME: params.docker.services.proxy.name,
     SERVICE_PROXY_PORT: params.docker.services.proxy.port,
     SERVICE_PROXY_IMAGE: params.docker.services.proxy.image,
@@ -99,6 +104,7 @@ async function setupInstallationENV(options) {
     SERVICE_CORE_PHP_VOLUMES_ENV: params.docker.services.core_php.volumes_env,
     SERVICE_CORE_PHP_VOLUMES_PHP_INI:
       params.docker.services.core_php.volumes_php_ini,
+    SERVICE_CORE_WEB_SUBDOMAIN: params.docker.services.core_web.subdomain,
     SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
     SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
     SERVICE_HUB_PHP_NAME: params.docker.services.hub_php.name,
@@ -109,17 +115,21 @@ async function setupInstallationENV(options) {
     SERVICE_HUB_PHP_VOLUMES_ENV: params.docker.services.hub_php.volumes_env,
     SERVICE_HUB_PHP_VOLUMES_PHP_INI:
       params.docker.services.hub_php.volumes_php_ini,
+    SERVICE_HUB_WEB_SUBDOMAIN: params.docker.services.hub_web.subdomain,
     SERVICE_HUB_WEB_NAME: params.docker.services.hub_web.name,
     SERVICE_HUB_WEB_PORT: params.docker.services.hub_web.port,
+    SERVICE_MYSQL_SUBDOMAIN: params.docker.services.mysql.subdomain,
     SERVICE_MYSQL_NAME: params.docker.services.mysql.name,
     SERVICE_MYSQL_PORT: params.docker.services.mysql.port,
     SERVICE_MYSQL_USER: params.docker.services.mysql.user,
     SERVICE_MYSQL_PASSWORD: params.docker.services.mysql.password,
     SERVICE_MYSQL_DB_CORE: params.docker.services.mysql.db_core,
     SERVICE_MYSQL_DB_HUB: params.docker.services.mysql.db_hub,
+    SERVICE_REDIS_SUBDOMAIN: params.docker.services.redis.subdomain,
     SERVICE_REDIS_NAME: params.docker.services.redis.name,
     SERVICE_REDIS_PORT: params.docker.services.redis.port,
     SERVICE_REDIS_IMAGE: params.docker.services.redis.image,
+    SERVICE_SMTP_SUBDOMAIN: params.docker.services.smtp.subdomain,
     SERVICE_SMTP_NAME: params.docker.services.smtp.name,
     SERVICE_SMTP_PORT: params.docker.services.smtp.port,
     SERVICE_SMTP_PORT_2: params.docker.services.smtp.port_2,
@@ -351,6 +361,21 @@ async function setupAdminAccount(options) {
           chalk.green.bold("Success")
         );
         console.log("\n");
+
+        let open_domain_localhost =
+          params.general.http_scheme +
+          "://" +
+          params.general.host +
+          ":" +
+          params.docker.services.hub_web.port;
+        let open_domain_dns =
+          params.general.http_scheme + "://" + options.answers.domain;
+        let open_domain =
+          options.answers.dns === "dns"
+            ? open_domain_dns
+            : open_domain_localhost;
+        let open_url = open_domain + "/" + params.general.path_hub_admin_login;
+
         console.log(
           "Dear " +
             res.firstname +
@@ -359,15 +384,7 @@ async function setupAdminAccount(options) {
             "), " +
             "thank you for installing the Dorcas Hub." +
             " Visit this URL address " +
-            chalk.green.bold(
-              params.general.http_scheme +
-                "://" +
-                params.general.host +
-                ":" +
-                params.docker.services.hub_web.port +
-                "/" +
-                params.general.path_hub_admin_login
-            ) +
+            chalk.green.bold(open_url) +
             " and login with your earlier provided Admin " +
             chalk.green.bold("email") +
             " and " +
@@ -540,16 +557,33 @@ async function setupDorcasCoreOAuth(options) {
   return res.data;
 }
 
-async function downloadPublicFiles(options) {
-  let destinationPath = options.targetDirectory + `/src/core-public/`;
+async function downloadPublicFiles() {
+  const status = new Spinner("Dorcas Public Files...");
+  status.start();
+  console.log("here");
 
-  await download(
-    "direct:https://github.com/dorcas-io/core-business/archive/ft-develop.zip",
-    destinationPath,
-    function(err) {
-      console.log(err ? "Error" : "Success");
-    }
-  ); //not working  o
+  let destinationPath = `src-core/bbg6.tar.gz`;
+
+  try {
+    const ls = await spawn("curl", [
+      `-LJ`,
+      `https://github.com/dorcas-io/core-business/tarball/ft-develop`,
+      `-o`,
+      destinationPath
+    ]);
+
+    ls.on("close", async code => {
+      //await status.stop();
+      console.log(code);
+      if (code === 0) {
+        console.log("%s Download Complete", chalk.green.bold("Success"));
+      }
+    });
+  } catch (err) {
+    console.log("%s Download Error!", chalk.red.bold("Error"));
+    //await status.stop();
+  } finally {
+  }
 }
 
 async function setupCoreENV(options) {
@@ -609,5 +643,7 @@ async function setupCoreENV(options) {
     }
   });
 }
+
+async function installDNSResolver(options) {}
 
 exports.createProject = createProject;

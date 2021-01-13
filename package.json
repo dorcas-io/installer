@@ -1,6 +1,6 @@
 {
   "name": "dorcas-installer",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Dorcas Hub: Business Edition Installer",
   "main": "src/bin/dorcas.js",
   "bin": {
@@ -29,6 +29,7 @@
     "download-git-repo": "^3.0.2",
     "envfile": "^6.14.0",
     "esm": "^3.2.18",
+    "execa": "^5.0.0",
     "figlet": "^1.2.4",
     "husky": "^4.2.3",
     "inquirer": "^7.3.3",

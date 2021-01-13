@@ -57,6 +57,7 @@ var params = {
         volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
       },
       core_web: {
+        subdomain: "core",
         name: "business_core_web",
         port: 18032
       },
@@ -71,10 +72,12 @@ var params = {
         volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
       },
       hub_web: {
+        subdomain: "hub",
         name: "business_hub_web",
         port: 18034
       },
       mysql: {
+        subdomain: "mysql",
         name: "business_mysql",
         port: 18035,
         host: "127.0.0.1",
@@ -84,11 +87,13 @@ var params = {
         db_hub: "dorcas_hub"
       },
       redis: {
+        subdomain: "redis",
         name: "business_redis",
         port: 18036,
         image: "redis:5.0-alpine"
       },
       smtp: {
+        subdomain: "smtp",
         name: "business_smtp",
         port: 18037,
         port_2: 18038,
