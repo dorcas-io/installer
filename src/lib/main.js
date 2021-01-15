@@ -14,8 +14,8 @@ const access = util.promisify(fs.access);
 const copy = util.promisify(ncp);
 const axios = require("axios");
 const mysql = require("mysql");
-const dgp = require("download-git-repo");
-const download = util.promisify(dgp);
+//const dgp = require("download-git-repo");
+//const download = util.promisify(dgp);
 const params = require(path.join(__dirname, "./params.js"));
 
 clear();
@@ -23,6 +23,14 @@ console.log(
   chalk.yellow(
     figlet.textSync(params.general.title, { horizontalLayout: "full" })
   )
+);
+
+console.log(
+  "Welcome to the Business Edition Installer v" +
+    require(path.join(__dirname, "../../package.json")).version
+);
+console.log(
+  "You can stop this installation process at any time by hitting CTRL + C"
 );
 
 async function createProject(options) {
@@ -56,9 +64,9 @@ async function createProject(options) {
 
     await access(templateDir, fs.constants.R_OK);
 
-    //await downloadPublicFiles(options);
-
     await setupInstallationENV(options);
+
+    await downloadPublicFiles(options);
 
     status.stop();
   } catch (err) {
@@ -70,7 +78,7 @@ async function createProject(options) {
     process.exit(1);
   }
 
-  await installContainerServices(options);
+  //await installContainerServices(options);
 
   await installDNSResolver(options);
 
@@ -152,14 +160,22 @@ async function setupInstallationENV(options) {
   });
 }
 
+async function downloadPublicFiles(options) {
+  const core_download = downloadFiles(options, "core").then(result => {
+    const hub_download = downloadFiles(options, "hub").then(result2 => {
+      installContainerServices(options);
+    });
+  });
+}
+
 async function installContainerServices(options) {
-  const status = new Spinner(
+  let status = new Spinner(
     "Removing any existing Docker Container Services..."
   );
   status.start();
 
   try {
-    const ls = await spawn("docker-compose", [
+    let ls = await spawn("docker-compose", [
       `--env-file`,
       `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
       `-f`,
@@ -557,35 +573,6 @@ async function setupDorcasCoreOAuth(options) {
   return res.data;
 }
 
-async function downloadPublicFiles() {
-  const status = new Spinner("Dorcas Public Files...");
-  status.start();
-  console.log("here");
-
-  let destinationPath = `src-core/bbg6.tar.gz`;
-
-  try {
-    const ls = await spawn("curl", [
-      `-LJ`,
-      `https://github.com/dorcas-io/core-business/tarball/ft-develop`,
-      `-o`,
-      destinationPath
-    ]);
-
-    ls.on("close", async code => {
-      //await status.stop();
-      console.log(code);
-      if (code === 0) {
-        console.log("%s Download Complete", chalk.green.bold("Success"));
-      }
-    });
-  } catch (err) {
-    console.log("%s Download Error!", chalk.red.bold("Error"));
-    //await status.stop();
-  } finally {
-  }
-}
-
 async function setupCoreENV(options) {
   let sourcePath =
     options.targetDirectory + `/app/env_core_` + options.template.toLowerCase();
@@ -642,6 +629,169 @@ async function setupCoreENV(options) {
       );
     }
   });
+}
+
+async function downloadFiles(options, app) {
+  let status = new Spinner(
+    "Downloading " + app.toUpperCase() + " application files (from source)..."
+  );
+  status.start();
+
+  let template = options.template.toLowerCase();
+
+  let destinationDir =
+    `${options.targetDirectory}` + `/src/tmp/` + `${app}` + `/`;
+  let destinationFile = `${app}` + `.tar.gz`;
+  let destinationPath = `${destinationDir}` + `${destinationFile}`;
+  let destinationExtractPath = destinationDir;
+  //let finalCopyPath = `src/templates/` + `${template}` + `/src/` + `${app}` + `/`;
+  //let {spawn, exec} = require('child_process');
+
+  //await cleanupFiles(destinationPath);
+  //await cleanupFiles(finalCopyPath);
+  //process.exit(1);
+  let download_link = `https://github.com/dorcas-io/core-business/tarball/ft-develop`;
+  if (app == "core") {
+    download_link = `https://github.com/dorcas-io/core-business/tarball/ft-develop`;
+  } else if (app == "hub") {
+    download_link = `https://github.com/dorcas-io/hub-business/tarball/ft-develop`;
+  }
+
+  try {
+    let ls = await spawn("curl", [
+      `-LJ`,
+      `${download_link}`,
+      `-o`,
+      `${destinationPath}`
+    ]);
+
+    ls.on("close", async code => {
+      if (code === 0) {
+        console.log("%s Download Complete", chalk.green.bold("Success"));
+        status.stop();
+        await extractFiles(
+          options,
+          template,
+          app,
+          destinationDir,
+          destinationFile,
+          destinationExtractPath
+        );
+        return true;
+      }
+    });
+  } catch (err) {
+    console.log("%s Download Error!", chalk.red.bold("Error"));
+  } finally {
+  }
+}
+
+async function extractFiles(
+  options,
+  template,
+  app,
+  extractDir,
+  extractFile,
+  extractDestinationPath
+) {
+  let status = new Spinner("Extracting " + app.toUpperCase() + " Files...");
+  status.start();
+  let { spawn, exec } = require("child_process");
+  try {
+    let ls2 = await spawn("tar", [
+      `-zxf`,
+      `${extractDir}` + `${extractFile}`,
+      `-C`,
+      extractDestinationPath
+    ]);
+
+    ls2.on("close", async code => {
+      if (code === 0) {
+        console.log("%s Extract Complete", chalk.green.bold("Success"));
+        status.stop();
+        let copyPath = `${options.targetDirectory}` + `/src/` + `${app}` + `/`;
+        await copyFiles(app, extractDestinationPath, copyPath);
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    console.log("%s Extract Error!", chalk.red.bold("Error"));
+  } finally {
+  }
+}
+
+async function copyFiles(app, sourceFolder, destinationFolder) {
+  let status = new Spinner("Copying " + app.toUpperCase() + " Files...");
+  status.start();
+  let { spawn, exec } = require("child_process");
+  let sourceFile = "";
+  //cp -a src/tmp/core/dorcas-io-*/. src/templates/production/src/core/
+  try {
+    let fs = require("fs"),
+      path = require("path");
+
+    let sourceDir = sourceFolder;
+    const files = fs.readdirSync(sourceDir);
+    for (const file_or_folder of files) {
+      let stat = fs.lstatSync(path.join(sourceDir, file_or_folder));
+      if (stat.isDirectory()) {
+        //since only one zip file and one extracted folder
+        sourceFile = file_or_folder; //we choose the folder
+        break;
+      }
+    }
+
+    console.log(
+      `Copying ` +
+        `${sourceFolder}` +
+        `${sourceFile}` +
+        ` to ` +
+        `${destinationFolder}`
+    );
+
+    let ls3 = await spawn("cp", [
+      `-a`,
+      `${sourceFolder}` + `${sourceFile}/.`,
+      `${destinationFolder}`
+    ]);
+
+    ls3.on("close", async code => {
+      if (code === 0) {
+        console.log("%s Copy Complete", chalk.green.bold("Success"));
+        status.stop();
+        let cleanupFolder = `${sourceFolder}`;
+        await cleanupFiles(app, cleanupFolder);
+      }
+    });
+  } catch (err) {
+    //console.log(err)
+    console.log("%s Copy Error!", chalk.red.bold("Error"));
+  } finally {
+  }
+}
+
+async function cleanupFiles(app, destinationFolder) {
+  let status = new Spinner(
+    "Cleaning up " + app.toUpperCase() + " downloads..."
+  );
+  status.start();
+  let { spawn, exec } = require("child_process");
+
+  //console.log(`Cleaning ` + `${destinationFolder}...`)
+
+  try {
+    let ls = await spawn("rm", [`-rf`, `${destinationFolder}`]);
+
+    ls.on("close", async code => {
+      if (code === 0) {
+        console.log("%s Cleanup Complete", chalk.green.bold("Success"));
+        status.stop();
+      }
+    });
+  } catch (err) {
+    console.log("%s Cleanup Error!", chalk.red.bold("Error"));
+  } finally {
+  }
 }
 
 async function installDNSResolver(options) {}

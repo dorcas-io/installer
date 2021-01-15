@@ -18,7 +18,7 @@ async function cli(args) {
     const status = new Spinner("Checking for Requirements...");
     status.start();
 
-    var count_requirements = 6;
+    var count_requirements = 7;
     var count_checks = 0;
 
     console.log("\n");
@@ -45,12 +45,18 @@ async function cli(args) {
                         task.skip(
                           "Node not available, visit https://nodejs.org/ to install"
                         );
+                        throw new Error(
+                          "NPM not available, visit https://nodejs.org/ to install"
+                        );
                       }
                     })
                     .catch(() => {
                       ctx.node = false;
                       task.skip(
                         "Node not available, visit https://nodejs.org/ to install"
+                      );
+                      throw new Error(
+                        "NPM not available, visit https://nodejs.org/ to install"
                       );
                     })
               },
@@ -68,11 +74,17 @@ async function cli(args) {
                         task.skip(
                           "Node not available, visit https://nodejs.org/ to install"
                         );
+                        throw new Error(
+                          "NPM not available, visit https://nodejs.org/ to install"
+                        );
                       }
                     })
                     .catch(() => {
                       ctx.npm = false;
                       task.skip(
+                        "NPM not available, visit https://nodejs.org/ to install"
+                      );
+                      throw new Error(
                         "NPM not available, visit https://nodejs.org/ to install"
                       );
                     })
@@ -101,11 +113,17 @@ async function cli(args) {
                         task.skip(
                           "Docker not available, https://www.docker.com/get-started to install"
                         );
+                        throw new Error(
+                          "Docker not available, https://www.docker.com/get-started to install"
+                        );
                       }
                     })
                     .catch(() => {
                       ctx.docker = false;
                       task.skip(
+                        "Docker not available, https://www.docker.com/get-started to install"
+                      );
+                      throw new Error(
                         "Docker not available, https://www.docker.com/get-started to install"
                       );
                     })
@@ -124,11 +142,17 @@ async function cli(args) {
                         task.skip(
                           "Docker not available, https://www.docker.com/get-started to install"
                         );
+                        throw new Error(
+                          "Docker not available, https://www.docker.com/get-started to install"
+                        );
                       }
                     })
                     .catch(() => {
                       ctx.docker_compose = false;
                       task.skip(
+                        "Docker not available, https://www.docker.com/get-started to install"
+                      );
+                      throw new Error(
                         "Docker not available, https://www.docker.com/get-started to install"
                       );
                     })
@@ -155,11 +179,13 @@ async function cli(args) {
                         count_checks++;
                       } else {
                         task.skip("UnZip not available");
+                        throw new Error("UnZip not available");
                       }
                     })
                     .catch(() => {
                       ctx.unzip = false;
                       task.skip("UnZip not available");
+                      throw new Error("UnZip not available");
                     })
               },
               {
@@ -174,12 +200,28 @@ async function cli(args) {
                         count_checks++;
                       } else {
                         task.skip("cURL not available");
+                        throw new Error("cURL not available");
                       }
                     })
                     .catch(() => {
                       ctx.curl = false;
                       task.skip("cURL not available");
+                      throw new Error("cURL not available");
                     })
+              },
+              {
+                title: "Checking for cp (copy utility)",
+                task: (ctx, task) =>
+                  execa("cp", ["-v"]).catch(status => {
+                    //console.log(status)
+                    if (status.exitCode == "64") {
+                      count_checks++;
+                    } else {
+                      ctx.curl = false;
+                      task.skip("cp (copy utility) not available");
+                      throw new Error("cp (copy utility) not available");
+                    }
+                  })
               }
             ],
             { concurrent: false }
@@ -214,7 +256,7 @@ async function cli(args) {
       .catch(err => {
         console.log("\n");
         console.error(
-          "%s Installation Requirements failed:" + err,
+          "%s Installation Requirements failed: " + err,
           chalk.red.bold("Error")
         );
         console.log("\n");
