@@ -712,7 +712,7 @@ async function extractFiles(
         console.log("%s Extract Complete", chalk.green.bold("Success"));
         status.stop();
         let copyPath = `${options.targetDirectory}` + `/src/` + `${app}` + `/`;
-        await copyFiles(app, extractDestinationPath, copyPath);
+        await copyFiles(options, app, extractDestinationPath, copyPath);
       }
     });
   } catch (err) {
@@ -722,7 +722,7 @@ async function extractFiles(
   }
 }
 
-async function copyFiles(app, sourceFolder, destinationFolder) {
+async function copyFiles(options, app, sourceFolder, destinationFolder) {
   let status = new Spinner("Copying " + app.toUpperCase() + " Files...");
   status.start();
   let { spawn, exec } = require("child_process");
@@ -742,6 +742,12 @@ async function copyFiles(app, sourceFolder, destinationFolder) {
         break;
       }
     }
+
+    //In development, copy all source files folder; In production, copy ONLY public source files;
+    sourceFile =
+      options.template.toLowerCase() == "development"
+        ? sourceFile
+        : sourceFile + "/public";
 
     console.log(
       `Copying ` +
