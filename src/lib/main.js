@@ -644,23 +644,25 @@ async function downloadFiles(options, app) {
   let destinationFile = `${app}` + `.tar.gz`;
   let destinationPath = `${destinationDir}` + `${destinationFile}`;
   let destinationExtractPath = destinationDir;
-  //let finalCopyPath = `src/templates/` + `${template}` + `/src/` + `${app}` + `/`;
-  //let {spawn, exec} = require('child_process');
 
-  //await cleanupFiles(destinationPath);
-  //await cleanupFiles(finalCopyPath);
-  //process.exit(1);
-  let download_link = `https://github.com/dorcas-io/core-business/tarball/ft-develop`;
-  if (app == "core") {
-    download_link = `https://github.com/dorcas-io/core-business/tarball/ft-develop`;
-  } else if (app == "hub") {
-    download_link = `https://github.com/dorcas-io/hub-business/tarball/ft-develop`;
+  let repoDownloadLink = "";
+
+  let repoArray = params.versions[template];
+
+  repoDownloadLink = `https://github.com/${repoArray[`git_repo_${app}`] +
+    "/tarball/" +
+    repoArray[`git_branch_${app}`]}`;
+  //https://github.com/dorcas-io/core-business//tarball/ft-develop
+  //console.log(repoDownloadLink)
+
+  if (repoDownloadLink.length == 0) {
+    console.log("%s Invalid repository URL", chalk.red.bold("Error"));
   }
 
   try {
     let ls = await spawn("curl", [
       `-LJ`,
-      `${download_link}`,
+      repoDownloadLink,
       `-o`,
       `${destinationPath}`
     ]);

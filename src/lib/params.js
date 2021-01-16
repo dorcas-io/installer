@@ -23,7 +23,11 @@ var params = {
         "mysql",
         "redis",
         "smtp"
-      ]
+      ],
+      git_repo_core: "dorcas-io/core-business",
+      git_branch_core: "ft-develop",
+      git_repo_hub: "dorcas-io/hub-business",
+      git_branch_hub: "ft-develop"
     },
     development: {
       services: [
@@ -36,7 +40,11 @@ var params = {
         "redis",
         "smtp",
         "reloader"
-      ]
+      ],
+      git_repo_core: "dorcas-io/core-business/",
+      git_branch_core: "ft-develop",
+      git_repo_hub: "dorcas-io/hub-business/",
+      git_branch_hub: "ft-develop"
     }
   },
   docker: {
