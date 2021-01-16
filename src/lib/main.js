@@ -711,7 +711,11 @@ async function extractFiles(
       if (code === 0) {
         console.log("%s Extract Complete", chalk.green.bold("Success"));
         status.stop();
-        let copyPath = `${options.targetDirectory}` + `/src/` + `${app}` + `/`;
+        //In development, destination copypath is src folder; In Production, destination copypath is a nginx public folder ;
+        let copyPath =
+          options.template.toLowerCase() == "development"
+            ? `${options.targetDirectory}` + `/src/` + `${app}` + `/`
+            : `${options.targetDirectory}` + `/nginx/` + `${app}` + `/public/`;
         await copyFiles(options, app, extractDestinationPath, copyPath);
       }
     });
