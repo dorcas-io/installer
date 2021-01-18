@@ -14,8 +14,6 @@ const access = util.promisify(fs.access);
 const copy = util.promisify(ncp);
 const axios = require("axios");
 const mysql = require("mysql");
-//const dgp = require("download-git-repo");
-//const download = util.promisify(dgp);
 const params = require(path.join(__dirname, "./params.js"));
 
 clear();
@@ -66,7 +64,7 @@ async function createProject(options) {
 
     await setupInstallationENV(options);
 
-    await downloadPublicFiles(options);
+    await downloadFiles(options, "core"); //start the trio of activities
 
     status.stop();
   } catch (err) {
@@ -160,13 +158,24 @@ async function setupInstallationENV(options) {
   });
 }
 
-async function downloadPublicFiles(options) {
-  const core_download = downloadFiles(options, "core").then(result => {
-    const hub_download = downloadFiles(options, "hub").then(result2 => {
-      installContainerServices(options);
-    });
-  });
-}
+// async function downloadPublicFiles(options) {
+//   const core_download = downloadFiles(options, "core").then(result => {
+//     const hub_download = downloadFiles(options, "hub").then(result2 => {
+//       installContainerServices(options);
+//     });
+//   });
+// }
+
+// async function processPublicFiles(options) {
+
+//   //const downloadFilesP = util.promisify(downloadFiles);
+
+//   let download1 = await downloadFiles(options, "core");
+//   //let download2 = await downloadFiles(options, "hub")
+
+//   let cont = await installContainerServices(options);
+
+// }
 
 async function installContainerServices(options) {
   let status = new Spinner(
@@ -239,7 +248,7 @@ async function installContainersForCore(options, params) {
           "%s Dorcas CORE Installation Complete",
           chalk.green.bold("Success")
         );
-        await prepareContainersForHub(options);
+        await initializeContainersForHub(options);
       } else {
         console.log(
           "%s Dorcas CORE Installation Error: " + code,
@@ -258,8 +267,8 @@ async function installContainersForCore(options, params) {
   }
 }
 
-async function prepareContainersForHub(options) {
-  const status = new Spinner("Preparing Dorcas HUB Installation...");
+async function initializeContainersForHub(options) {
+  const status = new Spinner("Initializing Dorcas HUB Installation...");
 
   const tasks = new Listr(
     [
@@ -671,7 +680,7 @@ async function downloadFiles(options, app) {
       if (code === 0) {
         console.log("%s Download Complete", chalk.green.bold("Success"));
         status.stop();
-        await extractFiles(
+        let result = await extractFiles(
           options,
           template,
           app,
@@ -679,11 +688,11 @@ async function downloadFiles(options, app) {
           destinationFile,
           destinationExtractPath
         );
-        return true;
       }
     });
   } catch (err) {
     console.log("%s Download Error!", chalk.red.bold("Error"));
+    return "download_failed";
   } finally {
   }
 }
@@ -716,12 +725,17 @@ async function extractFiles(
           options.template.toLowerCase() == "development"
             ? `${options.targetDirectory}` + `/src/` + `${app}` + `/`
             : `${options.targetDirectory}` + `/nginx/` + `${app}` + `/public/`;
-        await copyFiles(options, app, extractDestinationPath, copyPath);
+        let result = await copyFiles(
+          options,
+          app,
+          extractDestinationPath,
+          copyPath
+        );
       }
     });
   } catch (err) {
-    console.log(err);
-    console.log("%s Extract Error!", chalk.red.bold("Error"));
+    console.log("%s Extract Error!" + err, chalk.red.bold("Error"));
+    return "extract_failed";
   } finally {
   }
 }
@@ -753,13 +767,13 @@ async function copyFiles(options, app, sourceFolder, destinationFolder) {
         ? sourceFile
         : sourceFile + "/public";
 
-    console.log(
-      `Copying ` +
-        `${sourceFolder}` +
-        `${sourceFile}` +
-        ` to ` +
-        `${destinationFolder}`
-    );
+    // console.log(
+    //   `Copying ` +
+    //     `${sourceFolder}` +
+    //     `${sourceFile}` +
+    //     ` to ` +
+    //     `${destinationFolder}`
+    // );
 
     let ls3 = await spawn("cp", [
       `-a`,
@@ -772,17 +786,18 @@ async function copyFiles(options, app, sourceFolder, destinationFolder) {
         console.log("%s Copy Complete", chalk.green.bold("Success"));
         status.stop();
         let cleanupFolder = `${sourceFolder}`;
-        await cleanupFiles(app, cleanupFolder);
+        let result = await cleanupFiles(options, app, cleanupFolder);
       }
     });
   } catch (err) {
     //console.log(err)
-    console.log("%s Copy Error!", chalk.red.bold("Error"));
+    console.log("%s Copy Error!" + err, chalk.red.bold("Error"));
+    return "copy_failed";
   } finally {
   }
 }
 
-async function cleanupFiles(app, destinationFolder) {
+async function cleanupFiles(options, app, destinationFolder) {
   let status = new Spinner(
     "Cleaning up " + app.toUpperCase() + " downloads..."
   );
@@ -798,10 +813,17 @@ async function cleanupFiles(app, destinationFolder) {
       if (code === 0) {
         console.log("%s Cleanup Complete", chalk.green.bold("Success"));
         status.stop();
+        // process next activities
+        if (app == "core") {
+          await downloadFiles(options, "hub");
+        } else if (app == "hub") {
+          await installContainerServices(options);
+        }
       }
     });
   } catch (err) {
     console.log("%s Cleanup Error!", chalk.red.bold("Error"));
+    return "cleanup_failed";
   } finally {
   }
 }
