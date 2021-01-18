@@ -273,7 +273,7 @@ async function initializeContainersForHub(options) {
   const tasks = new Listr(
     [
       {
-        title: "Setting Up Dorcas HUB",
+        title: "Dorcas HUB Installation",
         task: () => installContainersForHub(options)
       }
     ],
@@ -309,15 +309,15 @@ async function initializeContainersForHub(options) {
             setTimeout(async () => {
               console.log("Creating CORE OAuth Entries...");
               await status.stop();
-              await prepareContainersForHub(options);
+              await initializeContainersForHub(options);
             }, 7500);
           }
         });
       } else {
         setTimeout(async () => {
-          console.log("Retrying connection...");
+          console.log("retrying connection...");
           await status.stop();
-          await prepareContainersForHub(options);
+          await initializeContainersForHub(options);
         }, 7500);
       }
     });
