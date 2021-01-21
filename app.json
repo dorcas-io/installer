@@ -1,0 +1,7 @@
+{
+  "name": "Dorcas Hub Installer",
+  "description": "Dorcas Hub: Business Edition Installer for Production and Developer versions",
+  "repository": "https://github.com/dorcas-io/installer",
+  "logo": "https://dorcas-s3.s3-eu-west-1.amazonaws.com/images/logo_main.png",
+  "keywords": ["dorcas", "installer", "business"]
+}

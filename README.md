@@ -2,13 +2,13 @@
 
 This provides a guide on how to install differents versions of the Dorcas Hub.
 
-We have installers and guides on both **Business** and **Community** versions of the Hub.
+We have installers and guides on both **Business** and **Community** editions of the Hub.
 
 ### The Business Edition
 
 The business version is suited for businesses (and developers) who wish to run a free and fully functional copy of the Hub either on a PaaS (such as Heroku and Digital Ocean) or on their local PC (in the case of developers that wish to evaluate).
 
-<!--For a fuller guide and more detailed instructions, [read the documentation](https://github.com/dorcas-io/installer/wiki/Business)-->
+For a fuller guide and more detailed instructions, [read the documentation](https://github.com/dorcas-io/installer/wiki/Business)
 
 ### The Community Edition
 
@@ -18,7 +18,9 @@ For a fuller guide and more detailed instructions, [read the documentation](http
 
 ### Quick Start
 
-To get started, follow the instructions below:
+If you wish to deploy a working (production) version of the Business Edition, [follow these instructions](https://github.com/dorcas-io/installer/wiki/Business)
+
+To get started quickly on your PC, follow the instructions below:
 
 #### Mac or Ubuntu
 
