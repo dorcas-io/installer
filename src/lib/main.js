@@ -51,6 +51,14 @@ async function createProject(options) {
   options.templateDirectory = templateDir;
 
   try {
+    if (options.answers.agreement === "no") {
+      console.log(
+        "%s You did not agree to the Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement",
+        chalk.red.bold("Installation Failed:")
+      );
+      process.exit(1);
+    }
+
     await installTemplateFiles(options);
 
     console.log(

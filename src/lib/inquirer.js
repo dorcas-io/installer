@@ -175,5 +175,28 @@ exports.inquiries = [
         return "Required! Kindly choose an applicable DNS Resolver for automatic configuration";
       }
     }
+  },
+  {
+    name: "agreement",
+    type: "list",
+    message:
+      "Installing and Using the Dorcas Hub requires agreeing to the Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement. Do you wish to proceed?",
+    choices: [
+      {
+        name: "Yes",
+        value: "yes"
+      },
+      {
+        name: "No",
+        value: "no"
+      }
+    ],
+    validate: function(value) {
+      if (value.length) {
+        return true;
+      } else {
+        return "Required! You need to agree (or disagree) with Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement. Proceed?";
+      }
+    }
   }
 ];
