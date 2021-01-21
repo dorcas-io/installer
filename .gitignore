@@ -14,8 +14,8 @@ test/
 src/tmp/core/
 src/tmp/hub/
 
-src/templates/production/src/core
-src/templates/production/src/hub
+src/templates/production/src/core/
+src/templates/production/src/hub/
 
-src/templates/development/src/core
-src/templates/development/src/hub
+src/templates/development/src/core/
+src/templates/development/src/hub/

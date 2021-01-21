@@ -1,5 +1,5 @@
 {
-  "name": "dorcas-installer",
+  "name": "@dorcas-io/dorcas-installer",
   "version": "1.1.1",
   "description": "Dorcas Hub: Business Edition Installer",
   "main": "src/bin/dorcas.js",
