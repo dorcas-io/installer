@@ -25,9 +25,9 @@ var params = {
         "smtp"
       ],
       git_repo_core: "dorcas-io/core-business",
-      git_branch_core: "ft-develop",
+      git_branch_core: "dev",
       git_repo_hub: "dorcas-io/hub-business",
-      git_branch_hub: "ft-develop"
+      git_branch_hub: "dev"
     },
     development: {
       services: [

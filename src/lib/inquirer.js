@@ -139,7 +139,7 @@ exports.inquiries = [
     name: "dns",
     type: "list",
     message:
-      "Should the installation be served using the Domain Name (DNS) or Localhost (default)?",
+      "Should the installation be served using the Domain Name (DNS) or Localhost (127.0.0.1) (default)?",
     choices: [
       {
         name: "Domain Name (DNS)",
@@ -173,6 +173,29 @@ exports.inquiries = [
         return true;
       } else {
         return "Required! Kindly choose an applicable DNS Resolver for automatic configuration";
+      }
+    }
+  },
+  {
+    name: "agreement",
+    type: "list",
+    message:
+      "Installing and Using the Dorcas Hub requires agreeing to the Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement. Do you wish to proceed?",
+    choices: [
+      {
+        name: "Yes",
+        value: "yes"
+      },
+      {
+        name: "No",
+        value: "no"
+      }
+    ],
+    validate: function(value) {
+      if (value.length) {
+        return true;
+      } else {
+        return "Required! You need to agree (or disagree) with Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement. Proceed?";
       }
     }
   }
