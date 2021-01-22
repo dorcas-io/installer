@@ -72,7 +72,7 @@ async function createProject(options) {
 
     await setupInstallationENV(options);
 
-    await downloadFiles(options, "core"); //start the trio of activities
+    await downloadFiles(options, "core"); //start the trio of activities - core, hub and then installing containers
 
     status.stop();
   } catch (err) {
@@ -83,10 +83,6 @@ async function createProject(options) {
     await status.stop();
     process.exit(1);
   }
-
-  //await installContainerServices(options);
-
-  await installDNSResolver(options);
 
   return true;
 }
@@ -165,25 +161,6 @@ async function setupInstallationENV(options) {
     }
   });
 }
-
-// async function downloadPublicFiles(options) {
-//   const core_download = downloadFiles(options, "core").then(result => {
-//     const hub_download = downloadFiles(options, "hub").then(result2 => {
-//       installContainerServices(options);
-//     });
-//   });
-// }
-
-// async function processPublicFiles(options) {
-
-//   //const downloadFilesP = util.promisify(downloadFiles);
-
-//   let download1 = await downloadFiles(options, "core");
-//   //let download2 = await downloadFiles(options, "hub")
-
-//   let cont = await installContainerServices(options);
-
-// }
 
 async function installContainerServices(options) {
   let status = new Spinner(
@@ -358,7 +335,7 @@ async function installContainersForHub(options) {
           "%s Dorcas HUB Installation Complete",
           chalk.green.bold("Success")
         );
-        await setupAdminAccount(options);
+        await installDNSResolver(options);
       }
     });
   } catch (err) {
@@ -402,7 +379,11 @@ async function setupAdminAccount(options) {
           ":" +
           params.docker.services.hub_web.port;
         let open_domain_dns =
-          params.general.http_scheme + "://" + options.answers.domain;
+          (options.answers.dns_resolver === "valet"
+            ? "https"
+            : params.general.http_scheme) +
+          "://" +
+          options.answers.domain;
         let open_domain =
           options.answers.dns === "dns"
             ? open_domain_dns
@@ -454,7 +435,30 @@ async function setupHubENV(options) {
   let sourcePath =
     options.targetDirectory + `/app/env_hub_` + options.template.toLowerCase();
 
-  let host_url = params.general.http_scheme + "://" + params.general.host;
+  //let host_url = params.general.http_scheme + "://" + params.general.host;
+  //determine proper url format for both localhost and dns
+  let host_scheme =
+    options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+  let host_domain_core =
+    options.answers.dns === "dns"
+      ? params.docker.services.core_web.subdomain + "." + options.answers.domain
+      : params.general.host;
+  let host_domain_hub =
+    options.answers.dns === "dns"
+      ? options.answers.domain
+      : params.general.host;
+  let host_domain =
+    options.answers.dns === "dns"
+      ? options.answers.domain
+      : params.general.host;
+  let host_port_core =
+    options.answers.dns === "dns"
+      ? ""
+      : ":" + params.docker.services.core_web.port;
+  let host_port_hub =
+    options.answers.dns === "dns"
+      ? ""
+      : ":" + params.docker.services.hub_web.port;
 
   let data = {
     APP_NAME: "Hub",
@@ -464,11 +468,14 @@ async function setupHubENV(options) {
     APP_LOG_LEVEL: "debug",
     SDK_HOST_PRODUCTION:
       "http://" + params.docker.services.core_web.name + ":80",
-    APP_URL: host_url + ":" + params.docker.services.hub_web.port,
-    APP_URL_STATIC: host_url + ":" + params.docker.services.hub_web.port,
+    APP_URL: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
+    APP_URL_STATIC: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     DEPLOY_ENV: "docker",
-    STANDARD_HOST: "localhost:" + params.docker.services.hub_web.port,
-    DORCAS_BASE_URL: "http://" + params.docker.services.core_web.name + ":80",
+    STANDARD_HOST:
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : `localhost:${params.docker.services.hub_web.port}`,
+    DORCAS_BASE_URL: `http://${params.docker.services.core_web.name}:80`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
     DORCAS_ENV: "production",
     DB_CONNECTION: "mysql",
@@ -594,7 +601,30 @@ async function setupCoreENV(options) {
   let sourcePath =
     options.targetDirectory + `/app/env_core_` + options.template.toLowerCase();
 
-  let host_url = params.general.http_scheme + "://" + params.general.host;
+  //let host_url = params.general.http_scheme + "://" + params.general.host;
+  //determine proper url format for both localhost and dns
+  let host_scheme =
+    options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+  let host_domain_core =
+    options.answers.dns === "dns"
+      ? params.docker.services.core_web.subdomain + "." + options.answers.domain
+      : params.general.host;
+  let host_domain_hub =
+    options.answers.dns === "dns"
+      ? options.answers.domain
+      : params.general.host;
+  let host_domain =
+    options.answers.dns === "dns"
+      ? options.answers.domain
+      : params.general.host;
+  let host_port_core =
+    options.answers.dns === "dns"
+      ? ""
+      : ":" + params.docker.services.core_web.port;
+  let host_port_hub =
+    options.answers.dns === "dns"
+      ? ""
+      : ":" + params.docker.services.hub_web.port;
 
   let data = {
     APP_NAME: "Dorcas",
@@ -602,12 +632,12 @@ async function setupCoreENV(options) {
     APP_KEY: "base64:qY8iqi+rdNRCoIwJMHOSIJttWywy5F2TRQDj8H2ju9g=",
     APP_DEBUG: "true",
     APP_LOG_LEVEL: "debug",
-    DORCAS_HOST_API: host_url + ":" + params.docker.services.core_web.port,
-    DORCAS_HOST_HUB: host_url + ":" + params.docker.services.hub_web.port,
+    DORCAS_HOST_API: `${host_scheme}://${host_domain_core}${host_port_core}`,
+    DORCAS_HOST_HUB: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
-    APP_URL: host_url + ":" + params.docker.services.core_web.port,
-    APP_SITE_URL: host_url + ":" + params.docker.services.hub_web.port,
-    APP_URL_STATIC: host_url + ":" + params.docker.services.core_web.port,
+    APP_URL: `${host_scheme}://${host_domain_core}${host_port_core}`,
+    APP_SITE_URL: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
+    APP_URL_STATIC: `${host_scheme}://${host_domain_core}${host_port_core}`,
     DEPLOY_ENV: "docker",
     DB_CONNECTION: "mysql",
     DB_HOST: params.docker.services.mysql.name,
@@ -836,6 +866,74 @@ async function cleanupFiles(options, app, destinationFolder) {
   }
 }
 
-async function installDNSResolver(options) {}
+async function installDNSResolver(options) {
+  if (
+    options.answers.dns === "dns" &&
+    options.answers.dns_resolver === "valet"
+  ) {
+    let status = new Spinner(
+      "Setting Up..." + chalk.green.bold(options.answers.domain) + " via Valet:"
+    );
+    status.start();
+
+    let domain = options.answers.domain.split(".");
+    let domain_count = domain.length;
+    //console.log(domain_count)
+    let domain_prefix = "",
+      domain_tld = "";
+
+    if (domain_count == 2) {
+      domain_prefix = domain[0];
+      domain_tld = domain[1];
+    } else {
+      domain_tld = domain[domain_count - 1];
+      let domain_left = domain.splice(-1, 1);
+      domain_prefix = domain_left.join("");
+    }
+
+    console.log("Hub Domain Prefix is: " + chalk.yellow.bold(domain_prefix));
+    console.log("Hub Domain TLD is: " + chalk.yellow.bold(domain_tld));
+    console.log(
+      "Please enter your system password to enable Valet DNS site configuration for " +
+        options.answers.domain +
+        "..."
+    );
+    status.stop();
+
+    let open_domain_localhost =
+      params.general.http_scheme +
+      "://" +
+      params.general.host +
+      ":" +
+      params.docker.services.hub_web.port;
+
+    try {
+      let ls = await spawn("valet", [
+        `proxy`,
+        `${domain_prefix}`,
+        `${open_domain_localhost}`
+      ]);
+
+      ls.on("close", async code => {
+        //status.stop();
+
+        if (code === 0) {
+          console.log(
+            "%s Valet Site configuration successfull",
+            chalk.green.bold("Success")
+          );
+          await setupAdminAccount(options);
+        }
+      });
+    } catch (err) {
+      console.log(
+        "%s Valet Site configuration error:" + err,
+        chalk.red.bold("Error")
+      );
+      await status.stop();
+    } finally {
+    }
+  }
+}
 
 exports.createProject = createProject;

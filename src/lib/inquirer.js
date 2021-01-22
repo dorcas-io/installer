@@ -139,7 +139,7 @@ exports.inquiries = [
     name: "dns",
     type: "list",
     message:
-      "Should the installation be served using the Domain Name (DNS) or Localhost (default)?",
+      "Should the installation be served using the Domain Name (DNS) or Localhost (127.0.0.1) (default)?",
     choices: [
       {
         name: "Domain Name (DNS)",
