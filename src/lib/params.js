@@ -57,12 +57,13 @@ var params = {
       core_php: {
         name: "business_core_php",
         port: 18031,
-        image: "dorcashub/dorcas-core-business:dev",
+        image: "dorcashub/dorcas-core-business",
         working_dir: "/var/www/dorcas-business-core",
         env_file: "./app/env_core_production",
         volumes_env:
           "./app/env_core_production:/var/www/dorcas-business-core/.env",
-        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
+        src_dir: "./src/core"
       },
       core_web: {
         subdomain: "core",
@@ -72,12 +73,13 @@ var params = {
       hub_php: {
         name: "business_hub_php",
         port: 18033,
-        image: "dorcashub/dorcas-hub-business:dev",
+        image: "dorcashub/dorcas-hub-business",
         working_dir: "/var/www/dorcas-business-hub",
         env_file: "./app/env_hub_production",
         volumes_env:
           "./app/env_hub_production:/var/www/dorcas-business-hub/.env",
-        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
+        src_dir: "./src/hub"
       },
       hub_web: {
         subdomain: "hub",
@@ -110,7 +112,7 @@ var params = {
       reloader: {
         name: "business_reloader",
         port: 18039,
-        image: ""
+        image: "apogiatzis/livereloading"
       }
     }
   }

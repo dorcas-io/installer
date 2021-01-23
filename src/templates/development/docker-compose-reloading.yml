@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  business_core_php:
+    container_name: "${SERVICE_CORE_PHP_NAME}_development"
+    build:
+    context: ./app/Dockerfile.core
+
+  business_reloader:
+    container_name: "${SERVICE_RELOADER_NAME}"
+    image: "${SERVICE_RELOADER_IMAGE}"
+    privileged: true
+    environment:
+      - RELOAD_DELAY=1.5
+      - RELOAD_CONTAINER=${SERVICE_CORE_PHP_NAME}_development
+      #- RELOAD_DIR=
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "${SERVICE_CORE_PHP_SRC_DIR}:${SERVICE_CORE_PHP_WORKING_DIR}"

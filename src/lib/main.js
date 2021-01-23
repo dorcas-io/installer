@@ -106,6 +106,7 @@ async function setupInstallationENV(options) {
     SERVICE_PROXY_IMAGE: params.docker.services.proxy.image,
     SERVICE_RELOADER_NAME: params.docker.services.reloader.name,
     SERVICE_RELOADER_PORT: params.docker.services.reloader.port,
+    SERVICE_RELOADER_IMAGE: params.docker.services.reloader.image,
     SERVICE_CORE_PHP_NAME: params.docker.services.core_php.name,
     SERVICE_CORE_PHP_PORT: params.docker.services.core_php.port,
     SERVICE_CORE_PHP_IMAGE: params.docker.services.core_php.image,
@@ -114,6 +115,7 @@ async function setupInstallationENV(options) {
     SERVICE_CORE_PHP_VOLUMES_ENV: params.docker.services.core_php.volumes_env,
     SERVICE_CORE_PHP_VOLUMES_PHP_INI:
       params.docker.services.core_php.volumes_php_ini,
+    SERVICE_CORE_PHP_SRC_DIR: params.docker.services.core_php.src_dir,
     SERVICE_CORE_WEB_SUBDOMAIN: params.docker.services.core_web.subdomain,
     SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
     SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
@@ -125,6 +127,7 @@ async function setupInstallationENV(options) {
     SERVICE_HUB_PHP_VOLUMES_ENV: params.docker.services.hub_php.volumes_env,
     SERVICE_HUB_PHP_VOLUMES_PHP_INI:
       params.docker.services.hub_php.volumes_php_ini,
+    SERVICE_HUB_PHP_SRC_DIR: params.docker.services.hub_php.src_dir,
     SERVICE_HUB_WEB_SUBDOMAIN: params.docker.services.hub_web.subdomain,
     SERVICE_HUB_WEB_NAME: params.docker.services.hub_web.name,
     SERVICE_HUB_WEB_PORT: params.docker.services.hub_web.port,
@@ -209,22 +212,40 @@ async function installContainersForCore(options, params) {
   console.log("%s Dorcas CORE ENV Setup Complete", chalk.green.bold("Success"));
 
   try {
-    // add `-d`, flag back
-    const ls = spawn("docker-compose", [
-      `--env-file`,
-      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
-      `-f`,
-      `${options.targetDirectory + `/docker-compose.yml`}`,
-      `up`,
-      `-d`,
-      `--build`,
-      `${params.docker.services.proxy.name}`,
-      `${params.docker.services.core_php.name}`,
-      `${params.docker.services.core_web.name}`,
-      `${params.docker.services.mysql.name}`,
-      `${params.docker.services.redis.name}`,
-      `${params.docker.services.smtp.name}`
-    ]);
+    if (options.template.toLowerCase() == "business") {
+      const ls = spawn("docker-compose", [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.proxy.name}`,
+        `${params.docker.services.core_php.name}`,
+        `${params.docker.services.core_web.name}`,
+        `${params.docker.services.mysql.name}`,
+        `${params.docker.services.redis.name}`,
+        `${params.docker.services.smtp.name}`
+      ]);
+    } else if (options.template.toLowerCase() == "development") {
+      //docker-compose -f docker-compose.yml -f docker-compose-with-reloading.yml up
+      const ls = spawn("docker-compose", [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose-reloading.yml`}`,
+        `up`,
+        `-d`,
+        `--build`
+      ]);
+    }
 
     ls.on("close", async code => {
       await status.stop();
