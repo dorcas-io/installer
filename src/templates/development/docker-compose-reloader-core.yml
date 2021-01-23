@@ -6,8 +6,8 @@ services:
     build:
     context: ./app/Dockerfile.core
 
-  business_reloader:
-    container_name: "${SERVICE_RELOADER_NAME}"
+  business_core_reloader:
+    container_name: "${SERVICE_RELOADER_NAME}_core"
     image: "${SERVICE_RELOADER_IMAGE}"
     privileged: true
     environment:

@@ -39,7 +39,11 @@ async function createProject(options) {
     ...options,
     targetDirectory:
       options.targetDirectory ||
-      process.cwd() + `/` + params.general.install_output_folder
+      process.cwd() +
+        `/` +
+        params.general.install_output_folder +
+        `-` +
+        options.template.toLowerCase()
   };
 
   const fullPathName = __dirname + "/main.js";
@@ -226,8 +230,10 @@ async function installContainersForCore(options, params) {
   console.log("%s Dorcas CORE ENV Setup Complete", chalk.green.bold("Success"));
 
   try {
-    if (options.template.toLowerCase() == "business") {
-      const ls = spawn("docker-compose", [
+    let dockerComposeArgs = [];
+
+    if (options.template.toLowerCase() == "production") {
+      dockerComposeArgs = [
         `--env-file`,
         `${options.targetDirectory +
           `/.env.` +
@@ -243,9 +249,9 @@ async function installContainersForCore(options, params) {
         `${params.docker.services.mysql.name}`,
         `${params.docker.services.redis.name}`,
         `${params.docker.services.smtp.name}`
-      ]);
+      ];
     } else if (options.template.toLowerCase() == "development") {
-      const ls = spawn("docker-compose", [
+      dockerComposeArgs = [
         `--env-file`,
         `${options.targetDirectory +
           `/.env.` +
@@ -253,12 +259,14 @@ async function installContainersForCore(options, params) {
         `-f`,
         `${options.targetDirectory + `/docker-compose.yml`}`,
         `-f`,
-        `${options.targetDirectory + `/docker-compose-reloading.yml`}`,
+        `${options.targetDirectory + `/docker-compose-reloader-core.yml`}`,
         `up`,
         `-d`,
         `--build`
-      ]);
+      ];
     }
+
+    const ls = spawn("docker-compose", dockerComposeArgs);
 
     ls.on("close", async code => {
       await status.stop();
@@ -351,17 +359,39 @@ async function installContainersForHub(options) {
   status.start();
 
   try {
-    const ls = await spawn("docker-compose", [
-      `--env-file`,
-      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
-      `-f`,
-      `${options.targetDirectory + `/docker-compose.yml`}`,
-      `up`,
-      `-d`,
-      `--build`,
-      `${params.docker.services.hub_php.name}`,
-      `${params.docker.services.hub_web.name}`
-    ]);
+    let dockerComposeArgs = [];
+
+    if (options.template.toLowerCase() == "production") {
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.hub_php.name}`,
+        `${params.docker.services.hub_web.name}`
+      ];
+    } else if (options.template.toLowerCase() == "development") {
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose-reloader-hub.yml`}`,
+        `up`,
+        `-d`,
+        `--build`
+      ];
+    }
+
+    const ls = spawn("docker-compose", dockerComposeArgs);
     ls.on("close", async code => {
       await status.stop();
       if (code === 0) {
