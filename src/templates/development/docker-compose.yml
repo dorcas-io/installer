@@ -43,8 +43,8 @@ services:
     tty: true
     ports:
       - "${SERVICE_CORE_WEB_PORT}:80"
-    #volumes:
-    #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    volumes:
+      - ./src/core/public:/var/www/dorcas-business-core/public
     depends_on:
       - business_core_php
     networks:
@@ -86,8 +86,8 @@ services:
     tty: true
     ports:
       - "${SERVICE_HUB_WEB_PORT}:80"
-    #volumes:
-    #- ${PWD}/web/cors_settings.conf:/etc/nginx/cors_settings.conf
+    volumes:
+      - ./src/hub/public:/var/www/dorcas-business-hub/public
     depends_on:
       - business_hub_php
       - business_core_web

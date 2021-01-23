@@ -50,6 +50,9 @@ async function createProject(options) {
   );
   options.templateDirectory = templateDir;
 
+  options.port_increment =
+    options.template.toLowerCase() == "business" ? 0 : 1000; //separate production & development ports
+
   try {
     if (options.answers.agreement === "no") {
       console.log(
@@ -99,16 +102,20 @@ async function setupInstallationENV(options) {
 
   let sourcePath =
     options.targetDirectory + `/.env.` + options.template.toLowerCase();
+
   let data = {
     HOST_DOMAIN: options.answers.domain,
     SERVICE_PROXY_NAME: params.docker.services.proxy.name,
-    SERVICE_PROXY_PORT: params.docker.services.proxy.port,
+    SERVICE_PROXY_PORT:
+      params.docker.services.proxy.port + options.port_increment,
     SERVICE_PROXY_IMAGE: params.docker.services.proxy.image,
     SERVICE_RELOADER_NAME: params.docker.services.reloader.name,
-    SERVICE_RELOADER_PORT: params.docker.services.reloader.port,
+    SERVICE_RELOADER_PORT:
+      params.docker.services.reloader.port + options.port_increment,
     SERVICE_RELOADER_IMAGE: params.docker.services.reloader.image,
     SERVICE_CORE_PHP_NAME: params.docker.services.core_php.name,
-    SERVICE_CORE_PHP_PORT: params.docker.services.core_php.port,
+    SERVICE_CORE_PHP_PORT:
+      params.docker.services.core_php.port + options.port_increment,
     SERVICE_CORE_PHP_IMAGE: params.docker.services.core_php.image,
     SERVICE_CORE_PHP_WORKING_DIR: params.docker.services.core_php.working_dir,
     SERVICE_CORE_PHP_ENV_FILE: params.docker.services.core_php.env_file,
@@ -118,9 +125,11 @@ async function setupInstallationENV(options) {
     SERVICE_CORE_PHP_SRC_DIR: params.docker.services.core_php.src_dir,
     SERVICE_CORE_WEB_SUBDOMAIN: params.docker.services.core_web.subdomain,
     SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
-    SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
+    SERVICE_CORE_WEB_PORT:
+      params.docker.services.core_web.port + options.port_increment,
     SERVICE_HUB_PHP_NAME: params.docker.services.hub_php.name,
-    SERVICE_HUB_PHP_PORT: params.docker.services.hub_php.port,
+    SERVICE_HUB_PHP_PORT:
+      params.docker.services.hub_php.port + options.port_increment,
     SERVICE_HUB_PHP_IMAGE: params.docker.services.hub_php.image,
     SERVICE_HUB_PHP_WORKING_DIR: params.docker.services.hub_php.working_dir,
     SERVICE_HUB_PHP_ENV_FILE: params.docker.services.hub_php.env_file,
@@ -130,22 +139,27 @@ async function setupInstallationENV(options) {
     SERVICE_HUB_PHP_SRC_DIR: params.docker.services.hub_php.src_dir,
     SERVICE_HUB_WEB_SUBDOMAIN: params.docker.services.hub_web.subdomain,
     SERVICE_HUB_WEB_NAME: params.docker.services.hub_web.name,
-    SERVICE_HUB_WEB_PORT: params.docker.services.hub_web.port,
+    SERVICE_HUB_WEB_PORT:
+      params.docker.services.hub_web.port + options.port_increment,
     SERVICE_MYSQL_SUBDOMAIN: params.docker.services.mysql.subdomain,
     SERVICE_MYSQL_NAME: params.docker.services.mysql.name,
-    SERVICE_MYSQL_PORT: params.docker.services.mysql.port,
+    SERVICE_MYSQL_PORT:
+      params.docker.services.mysql.port + options.port_increment,
     SERVICE_MYSQL_USER: params.docker.services.mysql.user,
     SERVICE_MYSQL_PASSWORD: params.docker.services.mysql.password,
     SERVICE_MYSQL_DB_CORE: params.docker.services.mysql.db_core,
     SERVICE_MYSQL_DB_HUB: params.docker.services.mysql.db_hub,
     SERVICE_REDIS_SUBDOMAIN: params.docker.services.redis.subdomain,
     SERVICE_REDIS_NAME: params.docker.services.redis.name,
-    SERVICE_REDIS_PORT: params.docker.services.redis.port,
+    SERVICE_REDIS_PORT:
+      params.docker.services.redis.port + options.port_increment,
     SERVICE_REDIS_IMAGE: params.docker.services.redis.image,
     SERVICE_SMTP_SUBDOMAIN: params.docker.services.smtp.subdomain,
     SERVICE_SMTP_NAME: params.docker.services.smtp.name,
-    SERVICE_SMTP_PORT: params.docker.services.smtp.port,
-    SERVICE_SMTP_PORT_2: params.docker.services.smtp.port_2,
+    SERVICE_SMTP_PORT:
+      params.docker.services.smtp.port + options.port_increment,
+    SERVICE_SMTP_PORT_2:
+      params.docker.services.smtp.port_2 + options.port_increment,
     SERVICE_SMTP_IMAGE: params.docker.services.smtp.image
   };
 
@@ -231,7 +245,6 @@ async function installContainersForCore(options, params) {
         `${params.docker.services.smtp.name}`
       ]);
     } else if (options.template.toLowerCase() == "development") {
-      //docker-compose -f docker-compose.yml -f docker-compose-with-reloading.yml up
       const ls = spawn("docker-compose", [
         `--env-file`,
         `${options.targetDirectory +
@@ -384,7 +397,7 @@ async function setupAdminAccount(options) {
         client_id: options.clientId,
         client_secret: options.clientSecret
       };
-      let res = await createUser(data);
+      let res = await createUser(data, options);
       if (typeof res !== "undefined") {
         await status.stop();
         console.log(
@@ -398,7 +411,7 @@ async function setupAdminAccount(options) {
           "://" +
           params.general.host +
           ":" +
-          params.docker.services.hub_web.port;
+          (params.docker.services.hub_web.port + options.port_increment);
         let open_domain_dns =
           (options.answers.dns_resolver === "valet"
             ? "https"
@@ -434,13 +447,13 @@ async function setupAdminAccount(options) {
   }
 }
 
-async function createUser(body) {
+async function createUser(body, options) {
   let create_url =
     params.general.http_scheme +
     "://" +
     params.general.host +
     ":" +
-    params.docker.services.core_web.port +
+    (params.docker.services.core_web.port + options.port_increment) +
     "/" +
     params.general.path_core_user_register;
 
@@ -475,11 +488,11 @@ async function setupHubENV(options) {
   let host_port_core =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.core_web.port;
+      : ":" + (params.docker.services.core_web.port + options.port_increment);
   let host_port_hub =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.hub_web.port;
+      : ":" + (params.docker.services.hub_web.port + options.port_increment);
 
   let data = {
     APP_NAME: "Hub",
@@ -641,11 +654,11 @@ async function setupCoreENV(options) {
   let host_port_core =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.core_web.port;
+      : ":" + (params.docker.services.core_web.port + options.port_increment);
   let host_port_hub =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.hub_web.port;
+      : ":" + (params.docker.services.hub_web.port + options.port_increment);
 
   let data = {
     APP_NAME: "Dorcas",
@@ -926,7 +939,7 @@ async function installDNSResolver(options) {
       "://" +
       params.general.host +
       ":" +
-      params.docker.services.hub_web.port;
+      (params.docker.services.hub_web.port + options.port_increment);
 
     try {
       let ls = await spawn("valet", [
