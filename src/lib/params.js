@@ -10,7 +10,8 @@ var params = {
     path_core_oauth_setup: "setup",
     path_core_user_register: "register",
     path_hub_admin_login: "login",
-    default_domain: "dorcas-demo.test"
+    default_domain_production: "dorcas-prod.test",
+    default_domain_development: "dorcas-dev.test"
   },
   versions: {
     production: {
@@ -60,11 +61,11 @@ var params = {
         port: 18031,
         image: "dorcashub/dorcas-core-business",
         working_dir: "/var/www/dorcas-business-core",
-        env_file: "./app/env_core_production",
-        volumes_env:
-          "./app/env_core_production:/var/www/dorcas-business-core/.env",
+        env_file: "./app/env_core_",
+        volumes_env: "/var/www/dorcas-business-core/.env",
         volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
-        src_dir: "./src/core"
+        src_dir: "./src/core",
+        app_dir: "./app"
       },
       core_web: {
         subdomain: "core",
@@ -76,11 +77,11 @@ var params = {
         port: 18033,
         image: "dorcashub/dorcas-hub-business",
         working_dir: "/var/www/dorcas-business-hub",
-        env_file: "./app/env_hub_production",
-        volumes_env:
-          "./app/env_hub_production:/var/www/dorcas-business-hub/.env",
+        env_file: "./app/env_hub_",
+        volumes_env: "/var/www/dorcas-business-hub/.env",
         volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
-        src_dir: "./src/hub"
+        src_dir: "./src/hub",
+        app_dir: "./app"
       },
       hub_web: {
         subdomain: "hub",

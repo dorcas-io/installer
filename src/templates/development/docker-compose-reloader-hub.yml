@@ -1,19 +1,21 @@
 version: "3"
 
 services:
-  business_hub_php:
-    container_name: "${SERVICE_HUB_PHP_NAME}_development"
+  business_hub_php_development:
+    container_name: "${SERVICE_HUB_PHP_NAME}"
     build:
-    context: ./app/Dockerfile.hub
+      context: "${SERVICE_HUB_PHP_APP_DIR}"
+      dockerfile: "Dockerfile.hub"
 
-  business_core_reloader:
+  business_reloader_development_hub:
     container_name: "${SERVICE_RELOADER_NAME}_hub"
     image: "${SERVICE_RELOADER_IMAGE}"
     privileged: true
     environment:
-      - RELOAD_DELAY=1.5
-      - RELOAD_CONTAINER=${SERVICE_HUB_PHP_NAME}_development
-      #- RELOAD_DIR=
+      - RELOAD_DELAY=60
+      - RESTART_TIMEOUT=10
+      - RELOAD_CONTAINER=${SERVICE_HUB_PHP_NAME}
+      - RELOAD_DIR=${SERVICE_HUB_PHP_WORKING_DIR}
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "${SERVICE_HUB_PHP_SRC_DIR}:${SERVICE_HUB_PHP_WORKING_DIR}"

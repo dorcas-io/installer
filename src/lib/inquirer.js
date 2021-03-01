@@ -10,6 +10,13 @@ exports.inquiries = [
     default: "production"
   },
   {
+    name: "debug",
+    type: "list",
+    message: "Do you want to run the installer in Debug Mode? ",
+    choices: ["no", "yes"],
+    default: "no"
+  },
+  {
     name: "firstname",
     type: "input",
     message: "Please enter your First Name",
@@ -108,14 +115,6 @@ exports.inquiries = [
       {
         name: "All Features",
         value: "all"
-      },
-      {
-        name: "Payroll Features",
-        value: "payroll"
-      },
-      {
-        name: "Sales and ECommerce Features",
-        value: "selling_online"
       }
     ],
     default: "all"
@@ -124,9 +123,22 @@ exports.inquiries = [
     name: "domain",
     type: "input",
     message: "Enter a Domain Name for this installation",
-    when: answers =>
-      answers.template === "production" || answers.template === "development",
-    default: params.general.default_domain,
+    when: answers => answers.template === "production",
+    default: params.general.default_domain_production,
+    validate: function(value) {
+      if (value.length) {
+        return true;
+      } else {
+        return "Required! Enter a Domain Name for this installation";
+      }
+    }
+  },
+  {
+    name: "domain",
+    type: "input",
+    message: "Enter a Domain Name for this installation",
+    when: answers => answers.template === "development",
+    default: params.general.default_domain_development,
     validate: function(value) {
       if (value.length) {
         return true;
@@ -162,10 +174,6 @@ exports.inquiries = [
       {
         name: "Valet (DnsMasq)",
         value: "valet"
-      },
-      {
-        name: "Nginx",
-        value: "nginx"
       }
     ],
     validate: function(value) {
