@@ -95,7 +95,7 @@ var params = {
         host: "127.0.0.1",
         user: "root",
         password: "P@sSW0rD",
-        db_core: "dorcas",
+        db_core: "dorcas_core",
         db_hub: "dorcas_hub"
       },
       redis: {

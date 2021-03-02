@@ -14,6 +14,7 @@ const access = util.promisify(fs.access);
 const copy = util.promisify(ncp);
 const axios = require("axios");
 const mysql = require("mysql");
+const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "./params.js"));
 
 clear();
@@ -574,13 +575,18 @@ async function setupHubENV(options) {
     options.answers.dns === "dns"
       ? ""
       : ":" + (params.docker.services.hub_web.port + options.port_increment);
-
+  //"base64:I3NFdR+AFWLg8OlU535RGibdUiJlFhQzoHTyhVylNec="
   let data = {
     APP_NAME: "Hub",
-    APP_ENV: "production",
-    APP_KEY: "base64:I3NFdR+AFWLg8OlU535RGibdUiJlFhQzoHTyhVylNec=",
-    APP_DEBUG: "true",
+    APP_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
+    APP_KEY: Str.random(32),
+    APP_DEBUG:
+      options.template.toLowerCase() == "production" ? "false" : "true",
     APP_LOG_LEVEL: "debug",
+    DORCAS_EDITION: "business",
     SDK_HOST_PRODUCTION:
       "http://" +
       params.docker.services.core_web.name +
@@ -596,7 +602,10 @@ async function setupHubENV(options) {
     DORCAS_BASE_URL: `http://${params.docker.services.core_web.name +
       options.container_name_addon}:80`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
-    DORCAS_ENV: "production",
+    DORCAS_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
     DB_CONNECTION: "mysql",
     DB_HOST: params.docker.services.mysql.name + options.container_name_addon,
     DB_PORT: "3306",
@@ -754,10 +763,15 @@ async function setupCoreENV(options) {
 
   let data = {
     APP_NAME: "Dorcas",
-    APP_ENV: "production",
-    APP_KEY: "base64:qY8iqi+rdNRCoIwJMHOSIJttWywy5F2TRQDj8H2ju9g=",
-    APP_DEBUG: "true",
+    APP_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
+    APP_KEY: Str.random(32),
+    APP_DEBUG:
+      options.template.toLowerCase() == "production" ? "false" : "true",
     APP_LOG_LEVEL: "debug",
+    DORCAS_EDITION: "business",
     DORCAS_HOST_API: `${host_scheme}://${host_domain_core}${host_port_core}`,
     DORCAS_HOST_HUB: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
