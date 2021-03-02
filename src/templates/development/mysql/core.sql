@@ -18,8 +18,8 @@
 --
 -- Table structure for table `accounting_accounts`
 --
-CREATE DATABASE IF NOT EXISTS dorcas;
-USE dorcas;
+CREATE DATABASE IF NOT EXISTS dorcas_core;
+USE dorcas_core;
 
 
 DROP TABLE IF EXISTS `accounting_accounts`;
