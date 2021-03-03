@@ -10,13 +10,6 @@ exports.inquiries = [
     default: "production"
   },
   {
-    name: "debug",
-    type: "list",
-    message: "Do you want to run the installer in Debug Mode? ",
-    choices: ["no", "yes"],
-    default: "no"
-  },
-  {
     name: "firstname",
     type: "input",
     message: "Please enter your First Name",
