@@ -10,6 +10,7 @@ const Spinner = CLI.Spinner;
 const execa = require("execa");
 const chalk = require("chalk");
 const spawn = require("child_process").spawn;
+const Str = require("@supercharge/strings");
 
 async function cli(args) {
   await checkRequirements();
@@ -281,7 +282,8 @@ async function cli(args) {
       skipInputs: args["--auto"] || false,
       commandPath: args["--command_path"],
       envPath: args["--env_path"],
-      debugMode: args["--debug"] || false
+      debugMode: args["--debug"] || false,
+      databasePassword: Str.random(18)
     };
   }
 

@@ -173,7 +173,7 @@ async function setupInstallationENV(options) {
     SERVICE_MYSQL_PORT:
       params.docker.services.mysql.port + options.port_increment,
     SERVICE_MYSQL_USER: params.docker.services.mysql.user,
-    SERVICE_MYSQL_PASSWORD: params.docker.services.mysql.password,
+    SERVICE_MYSQL_PASSWORD: options.databasePassword,
     SERVICE_MYSQL_DB_CORE: params.docker.services.mysql.db_core,
     SERVICE_MYSQL_DB_HUB: params.docker.services.mysql.db_hub,
     SERVICE_REDIS_SUBDOMAIN: params.docker.services.redis.subdomain,
@@ -611,7 +611,7 @@ async function setupHubENV(options) {
     DB_PORT: "3306",
     DB_DATABASE: params.docker.services.mysql.db_hub,
     DB_USERNAME: params.docker.services.mysql.user,
-    DB_PASSWORD: params.docker.services.mysql.password,
+    DB_PASSWORD: options.databasePassword,
     BROADCAST_DRIVER: "pusher",
     CACHE_DRIVER: "redis",
     QUEUE_DRIVER: "redis",
@@ -653,7 +653,7 @@ async function checkDatabaseConnectionCORE(options, callback) {
   let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
-    password: params.docker.services.mysql.password,
+    password: options.databasePassword,
     port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
   };
@@ -689,7 +689,7 @@ async function checkOAuthTablesCORE(options, callback) {
   let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
-    password: params.docker.services.mysql.password,
+    password: options.databasePassword,
     port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
   };
@@ -798,13 +798,13 @@ async function setupCoreENV(options) {
     DB_PORT: "3306",
     DB_DATABASE: params.docker.services.mysql.db_core,
     DB_USERNAME: params.docker.services.mysql.user,
-    DB_PASSWORD: params.docker.services.mysql.password,
+    DB_PASSWORD: options.databasePassword,
     DB_HUB_HOST:
       params.docker.services.mysql.name + options.container_name_addon,
     DB_HUB_PORT: "3306",
     DB_HUB_DATABASE: params.docker.services.mysql.db_hub,
     DB_HUB_USERNAME: params.docker.services.mysql.user,
-    DB_HUB_PASSWORD: params.docker.services.mysql.password,
+    DB_HUB_PASSWORD: options.databasePassword,
     CACHE_DRIVER: "redis",
     QUEUE_DRIVER: "redis",
     FILESYSTEM_DRIVER: "file",
@@ -1048,7 +1048,7 @@ async function installDNSResolver(options) {
     console.log("Hub Domain Prefix is: " + chalk.yellow.bold(domain_prefix));
     console.log("Hub Domain TLD is: " + chalk.yellow.bold(domain_tld));
     console.log(
-      "Please enter your system password to enable Valet DNS site configuration for " +
+      "Please enter your (mac) system password to enable Valet DNS site configuration for " +
         chalk.green.bold(options.answers.domain) +
         " and " +
         chalk.green.bold("core." + options.answers.domain) +
