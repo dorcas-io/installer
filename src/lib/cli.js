@@ -269,13 +269,19 @@ async function cli(args) {
 
   function parseArgumentsIntoOptions(rawArgs) {
     const args = arg(
-      { "--auto": Boolean, "--command_path": String, "--env_path": String },
+      {
+        "--auto": Boolean,
+        "--command_path": String,
+        "--env_path": String,
+        "--debug": Boolean
+      },
       { argv: rawArgs.slice(2) }
     );
     return {
       skipInputs: args["--auto"] || false,
       commandPath: args["--command_path"],
-      envPath: args["--env_path"]
+      envPath: args["--env_path"],
+      debugMode: args["--debug"] || false
     };
   }
 

@@ -300,7 +300,7 @@ async function installContainersForCore(options, params) {
       ];
     }
 
-    if (options.answers.debug == "yes") {
+    if (options.debugMode == "yes") {
       console.log("DEBUG: Spawning docker-compose: ");
       console.log(dockerComposeArgs);
     }
@@ -650,13 +650,20 @@ async function setupHubENV(options) {
 }
 
 async function checkDatabaseConnectionCORE(options, callback) {
-  const connection = mysql.createConnection({
+  let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
     password: params.docker.services.mysql.password,
     port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
-  });
+  };
+
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode) {
+    console.log("DEBUG: Core DB Connection String: ");
+    console.log(connection_string);
+  }
 
   const status = new Spinner("Connecting to Database...");
   status.start();
@@ -679,13 +686,20 @@ async function checkDatabaseConnectionCORE(options, callback) {
 }
 
 async function checkOAuthTablesCORE(options, callback) {
-  const connection = mysql.createConnection({
+  let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
     password: params.docker.services.mysql.password,
     port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
-  });
+  };
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode == "yes") {
+    console.log("DEBUG: OAuth DB Connection String: ");
+    console.log(connection_string);
+  }
+
   const status = new Spinner("Connecting to Database...");
   status.start();
   connection.query("SELECT * FROM oauth_clients", async function(
@@ -720,7 +734,7 @@ async function setupDorcasCoreOAuth(options) {
     "/" +
     params.general.path_core_oauth_setup;
 
-  if (options.answers.debug == "yes") {
+  if (options.debugMode) {
     console.log("DEBUG: OAuth Setup URL: ");
     console.log(setup_url);
   }
