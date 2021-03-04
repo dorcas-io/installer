@@ -539,6 +539,12 @@ async function createUser(body, options) {
     "/" +
     params.general.path_core_user_register;
 
+  if (options.debugMode) {
+    console.log("DEBUG: Admin User Creation String: ");
+    console.log(create_url);
+    console.log(body);
+  }
+
   let res = await axios.post(create_url, body).catch(err => {
     console.log(chalk.red.bold(`User Creation Error: ${err}`));
     process.exit();
@@ -583,8 +589,7 @@ async function setupHubENV(options) {
         ? "production"
         : "development",
     APP_KEY: Str.random(32),
-    APP_DEBUG:
-      options.template.toLowerCase() == "production" ? "false" : "true",
+    APP_DEBUG: options.template.toLowerCase() == "production" ? "true" : "true",
     APP_LOG_LEVEL: "debug",
     DORCAS_EDITION: "business",
     SDK_HOST_PRODUCTION:
