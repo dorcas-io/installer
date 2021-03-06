@@ -10,7 +10,8 @@ var params = {
     path_core_oauth_setup: "setup",
     path_core_user_register: "register",
     path_hub_admin_login: "login",
-    default_domain: "dorcas-demo.test"
+    default_domain_production: "dorcas-prod.test",
+    default_domain_development: "dorcas-dev.test"
   },
   versions: {
     production: {
@@ -39,12 +40,13 @@ var params = {
         "mysql",
         "redis",
         "smtp",
-        "reloader"
+        "reloader-core",
+        "reloader-hub"
       ],
-      git_repo_core: "dorcas-io/core-business/",
-      git_branch_core: "ft-develop",
-      git_repo_hub: "dorcas-io/hub-business/",
-      git_branch_hub: "ft-develop"
+      git_repo_core: "dorcas-io/core-business",
+      git_branch_core: "dev",
+      git_repo_hub: "dorcas-io/hub-business",
+      git_branch_hub: "dev"
     }
   },
   docker: {
@@ -57,12 +59,13 @@ var params = {
       core_php: {
         name: "business_core_php",
         port: 18031,
-        image: "dorcashub/dorcas-core-business:dev",
+        image: "dorcashub/dorcas-core-business",
         working_dir: "/var/www/dorcas-business-core",
-        env_file: "./app/env_core_production",
-        volumes_env:
-          "./app/env_core_production:/var/www/dorcas-business-core/.env",
-        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
+        env_file: "./app/env_core_",
+        volumes_env: "/var/www/dorcas-business-core/.env",
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
+        src_dir: "./src/core",
+        app_dir: "./app"
       },
       core_web: {
         subdomain: "core",
@@ -72,12 +75,13 @@ var params = {
       hub_php: {
         name: "business_hub_php",
         port: 18033,
-        image: "dorcashub/dorcas-hub-business:dev",
+        image: "dorcashub/dorcas-hub-business",
         working_dir: "/var/www/dorcas-business-hub",
-        env_file: "./app/env_hub_production",
-        volumes_env:
-          "./app/env_hub_production:/var/www/dorcas-business-hub/.env",
-        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini"
+        env_file: "./app/env_hub_",
+        volumes_env: "/var/www/dorcas-business-hub/.env",
+        volumes_php_ini: "./app/local.ini:/usr/local/etc/php/conf.d/local.ini",
+        src_dir: "./src/hub",
+        app_dir: "./app"
       },
       hub_web: {
         subdomain: "hub",
@@ -91,7 +95,7 @@ var params = {
         host: "127.0.0.1",
         user: "root",
         password: "P@sSW0rD",
-        db_core: "dorcas",
+        db_core: "dorcas_core",
         db_hub: "dorcas_hub"
       },
       redis: {
@@ -110,7 +114,7 @@ var params = {
       reloader: {
         name: "business_reloader",
         port: 18039,
-        image: ""
+        image: "apogiatzis/livereloading"
       }
     }
   }

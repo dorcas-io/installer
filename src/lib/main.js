@@ -14,6 +14,7 @@ const access = util.promisify(fs.access);
 const copy = util.promisify(ncp);
 const axios = require("axios");
 const mysql = require("mysql");
+const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "./params.js"));
 
 clear();
@@ -39,7 +40,11 @@ async function createProject(options) {
     ...options,
     targetDirectory:
       options.targetDirectory ||
-      process.cwd() + `/` + params.general.install_output_folder
+      process.cwd() +
+        `/` +
+        params.general.install_output_folder +
+        `-` +
+        options.template.toLowerCase()
   };
 
   const fullPathName = __dirname + "/main.js";
@@ -49,6 +54,12 @@ async function createProject(options) {
     options.template.toLowerCase()
   );
   options.templateDirectory = templateDir;
+
+  options.port_increment =
+    options.template.toLowerCase() == "production" ? 0 : 1000; //separate production & development ports
+
+  options.container_name_addon =
+    options.template.toLowerCase() == "production" ? "" : "_development"; //separate production & development ports
 
   try {
     if (options.answers.agreement === "no") {
@@ -99,50 +110,85 @@ async function setupInstallationENV(options) {
 
   let sourcePath =
     options.targetDirectory + `/.env.` + options.template.toLowerCase();
+
   let data = {
     HOST_DOMAIN: options.answers.domain,
-    SERVICE_PROXY_NAME: params.docker.services.proxy.name,
-    SERVICE_PROXY_PORT: params.docker.services.proxy.port,
+    SERVICE_PROXY_NAME:
+      params.docker.services.proxy.name + options.container_name_addon,
+    SERVICE_PROXY_PORT:
+      params.docker.services.proxy.port + options.port_increment,
     SERVICE_PROXY_IMAGE: params.docker.services.proxy.image,
-    SERVICE_RELOADER_NAME: params.docker.services.reloader.name,
-    SERVICE_RELOADER_PORT: params.docker.services.reloader.port,
-    SERVICE_CORE_PHP_NAME: params.docker.services.core_php.name,
-    SERVICE_CORE_PHP_PORT: params.docker.services.core_php.port,
+    SERVICE_RELOADER_NAME:
+      params.docker.services.reloader.name + options.container_name_addon,
+    SERVICE_RELOADER_PORT:
+      params.docker.services.reloader.port + options.port_increment,
+    SERVICE_RELOADER_IMAGE: params.docker.services.reloader.image,
+    SERVICE_CORE_PHP_NAME:
+      params.docker.services.core_php.name + options.container_name_addon,
+    SERVICE_CORE_PHP_PORT:
+      params.docker.services.core_php.port + options.port_increment,
     SERVICE_CORE_PHP_IMAGE: params.docker.services.core_php.image,
     SERVICE_CORE_PHP_WORKING_DIR: params.docker.services.core_php.working_dir,
-    SERVICE_CORE_PHP_ENV_FILE: params.docker.services.core_php.env_file,
-    SERVICE_CORE_PHP_VOLUMES_ENV: params.docker.services.core_php.volumes_env,
+    SERVICE_CORE_PHP_ENV_FILE:
+      params.docker.services.core_php.env_file + options.template.toLowerCase(),
+    SERVICE_CORE_PHP_VOLUMES_ENV:
+      params.docker.services.core_php.env_file +
+      options.template.toLowerCase() +
+      ":" +
+      params.docker.services.core_php.volumes_env,
     SERVICE_CORE_PHP_VOLUMES_PHP_INI:
       params.docker.services.core_php.volumes_php_ini,
+    SERVICE_CORE_PHP_SRC_DIR: params.docker.services.core_php.src_dir,
+    SERVICE_CORE_PHP_APP_DIR: params.docker.services.core_php.app_dir,
     SERVICE_CORE_WEB_SUBDOMAIN: params.docker.services.core_web.subdomain,
-    SERVICE_CORE_WEB_NAME: params.docker.services.core_web.name,
-    SERVICE_CORE_WEB_PORT: params.docker.services.core_web.port,
-    SERVICE_HUB_PHP_NAME: params.docker.services.hub_php.name,
-    SERVICE_HUB_PHP_PORT: params.docker.services.hub_php.port,
+    SERVICE_CORE_WEB_NAME:
+      params.docker.services.core_web.name + options.container_name_addon,
+    SERVICE_CORE_WEB_PORT:
+      params.docker.services.core_web.port + options.port_increment,
+    SERVICE_HUB_PHP_NAME:
+      params.docker.services.hub_php.name + options.container_name_addon,
+    SERVICE_HUB_PHP_PORT:
+      params.docker.services.hub_php.port + options.port_increment,
     SERVICE_HUB_PHP_IMAGE: params.docker.services.hub_php.image,
     SERVICE_HUB_PHP_WORKING_DIR: params.docker.services.hub_php.working_dir,
-    SERVICE_HUB_PHP_ENV_FILE: params.docker.services.hub_php.env_file,
-    SERVICE_HUB_PHP_VOLUMES_ENV: params.docker.services.hub_php.volumes_env,
+    SERVICE_HUB_PHP_ENV_FILE:
+      params.docker.services.hub_php.env_file + options.template.toLowerCase(),
+    SERVICE_HUB_PHP_VOLUMES_ENV:
+      params.docker.services.hub_php.env_file +
+      options.template.toLowerCase() +
+      ":" +
+      params.docker.services.hub_php.volumes_env,
     SERVICE_HUB_PHP_VOLUMES_PHP_INI:
       params.docker.services.hub_php.volumes_php_ini,
+    SERVICE_HUB_PHP_SRC_DIR: params.docker.services.hub_php.src_dir,
+    SERVICE_HUB_PHP_APP_DIR: params.docker.services.hub_php.app_dir,
     SERVICE_HUB_WEB_SUBDOMAIN: params.docker.services.hub_web.subdomain,
-    SERVICE_HUB_WEB_NAME: params.docker.services.hub_web.name,
-    SERVICE_HUB_WEB_PORT: params.docker.services.hub_web.port,
+    SERVICE_HUB_WEB_NAME:
+      params.docker.services.hub_web.name + options.container_name_addon,
+    SERVICE_HUB_WEB_PORT:
+      params.docker.services.hub_web.port + options.port_increment,
     SERVICE_MYSQL_SUBDOMAIN: params.docker.services.mysql.subdomain,
-    SERVICE_MYSQL_NAME: params.docker.services.mysql.name,
-    SERVICE_MYSQL_PORT: params.docker.services.mysql.port,
+    SERVICE_MYSQL_NAME:
+      params.docker.services.mysql.name + options.container_name_addon,
+    SERVICE_MYSQL_PORT:
+      params.docker.services.mysql.port + options.port_increment,
     SERVICE_MYSQL_USER: params.docker.services.mysql.user,
-    SERVICE_MYSQL_PASSWORD: params.docker.services.mysql.password,
+    SERVICE_MYSQL_PASSWORD: options.databasePassword,
     SERVICE_MYSQL_DB_CORE: params.docker.services.mysql.db_core,
     SERVICE_MYSQL_DB_HUB: params.docker.services.mysql.db_hub,
     SERVICE_REDIS_SUBDOMAIN: params.docker.services.redis.subdomain,
-    SERVICE_REDIS_NAME: params.docker.services.redis.name,
-    SERVICE_REDIS_PORT: params.docker.services.redis.port,
+    SERVICE_REDIS_NAME:
+      params.docker.services.redis.name + options.container_name_addon,
+    SERVICE_REDIS_PORT:
+      params.docker.services.redis.port + options.port_increment,
     SERVICE_REDIS_IMAGE: params.docker.services.redis.image,
     SERVICE_SMTP_SUBDOMAIN: params.docker.services.smtp.subdomain,
-    SERVICE_SMTP_NAME: params.docker.services.smtp.name,
-    SERVICE_SMTP_PORT: params.docker.services.smtp.port,
-    SERVICE_SMTP_PORT_2: params.docker.services.smtp.port_2,
+    SERVICE_SMTP_NAME:
+      params.docker.services.smtp.name + options.container_name_addon,
+    SERVICE_SMTP_PORT:
+      params.docker.services.smtp.port + options.port_increment,
+    SERVICE_SMTP_PORT_2:
+      params.docker.services.smtp.port_2 + options.port_increment,
     SERVICE_SMTP_IMAGE: params.docker.services.smtp.image
   };
 
@@ -154,10 +200,7 @@ async function setupInstallationENV(options) {
       //throw err;
     } else {
       //status.stop;
-      console.log(
-        "%s Installation ENV successfully Set",
-        chalk.green.bold("Success")
-      );
+      console.log("%s Installation ENV Installed", chalk.green.bold("Success"));
     }
   });
 }
@@ -206,25 +249,63 @@ async function installContainersForCore(options, params) {
 
   await setupCoreENV(options);
 
-  console.log("%s Dorcas CORE ENV Setup Complete", chalk.green.bold("Success"));
-
   try {
-    // add `-d`, flag back
-    const ls = spawn("docker-compose", [
-      `--env-file`,
-      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
-      `-f`,
-      `${options.targetDirectory + `/docker-compose.yml`}`,
-      `up`,
-      `-d`,
-      `--build`,
-      `${params.docker.services.proxy.name}`,
-      `${params.docker.services.core_php.name}`,
-      `${params.docker.services.core_web.name}`,
-      `${params.docker.services.mysql.name}`,
-      `${params.docker.services.redis.name}`,
-      `${params.docker.services.smtp.name}`
-    ]);
+    let dockerComposeArgs = [];
+
+    if (options.template.toLowerCase() == "production") {
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.proxy.name + options.container_name_addon}`,
+        `${params.docker.services.core_php.name +
+          options.container_name_addon}`,
+        `${params.docker.services.core_web.name +
+          options.container_name_addon}`,
+        `${params.docker.services.mysql.name + options.container_name_addon}`,
+        `${params.docker.services.redis.name + options.container_name_addon}`,
+        `${params.docker.services.smtp.name + options.container_name_addon}`
+      ];
+    } else if (options.template.toLowerCase() == "development") {
+      //`--build` - necessary  for dev hot reloading?
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose-reloader-core.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.proxy.name + options.container_name_addon}`,
+        `${params.docker.services.core_php.name +
+          options.container_name_addon}`,
+        `${params.docker.services.core_web.name +
+          options.container_name_addon}`,
+        `${params.docker.services.mysql.name + options.container_name_addon}`,
+        `${params.docker.services.redis.name + options.container_name_addon}`,
+        `${params.docker.services.smtp.name + options.container_name_addon}`,
+        `${params.docker.services.reloader.name +
+          options.container_name_addon +
+          `_core`}`
+      ];
+    }
+
+    if (options.debugMode == "yes") {
+      console.log("DEBUG: Spawning docker-compose: ");
+      console.log(dockerComposeArgs);
+    }
+
+    const ls = spawn("docker-compose", dockerComposeArgs);
 
     ls.on("close", async code => {
       await status.stop();
@@ -236,7 +317,7 @@ async function installContainersForCore(options, params) {
         await initializeContainersForHub(options);
       } else {
         console.log(
-          "%s Dorcas CORE Installation Error: " + code,
+          "%s Dorcas CORE Installation Code: " + code,
           chalk.red.bold("Error")
         );
         process.exit(1);
@@ -244,7 +325,7 @@ async function installContainersForCore(options, params) {
     });
   } catch (err) {
     console.log(
-      "%s Dorcas CORE Installation Error:" + err,
+      "%s Dorcas CORE Installation Error: " + err,
       chalk.red.bold("Error")
     );
     status.stop();
@@ -254,6 +335,7 @@ async function installContainersForCore(options, params) {
 
 async function initializeContainersForHub(options) {
   const status = new Spinner("Initializing Dorcas HUB Installation...");
+  status.start();
 
   const tasks = new Listr(
     [
@@ -265,12 +347,10 @@ async function initializeContainersForHub(options) {
     { exitOnError: false }
   );
 
-  status.start();
-
   try {
-    await checkDatabaseConnectionCORE(async function(result) {
+    await checkDatabaseConnectionCORE(options, async function(result) {
       if (result) {
-        await checkOAuthTablesCORE(async function(result) {
+        await checkOAuthTablesCORE(options, async function(result) {
           if (result) {
             setTimeout(async () => {
               let res = await setupDorcasCoreOAuth(options);
@@ -317,17 +397,46 @@ async function installContainersForHub(options) {
   status.start();
 
   try {
-    const ls = await spawn("docker-compose", [
-      `--env-file`,
-      `${options.targetDirectory + `/.env.` + options.template.toLowerCase()}`,
-      `-f`,
-      `${options.targetDirectory + `/docker-compose.yml`}`,
-      `up`,
-      `-d`,
-      `--build`,
-      `${params.docker.services.hub_php.name}`,
-      `${params.docker.services.hub_web.name}`
-    ]);
+    let dockerComposeArgs = [];
+
+    if (options.template.toLowerCase() == "production") {
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.hub_php.name + options.container_name_addon}`,
+        `${params.docker.services.hub_web.name + options.container_name_addon}`
+      ];
+    } else if (options.template.toLowerCase() == "development") {
+      dockerComposeArgs = [
+        `--env-file`,
+        `${options.targetDirectory +
+          `/.env.` +
+          options.template.toLowerCase()}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose.yml`}`,
+        `-f`,
+        `${options.targetDirectory + `/docker-compose-reloader-hub.yml`}`,
+        `up`,
+        `-d`,
+        `--build`,
+        `${params.docker.services.hub_php.name + options.container_name_addon}`,
+        `${params.docker.services.hub_web.name + options.container_name_addon}`,
+        `${params.docker.services.reloader.name +
+          options.container_name_addon +
+          `_hub`}`
+      ];
+    }
+
+    console.log(dockerComposeArgs);
+
+    const ls = spawn("docker-compose", dockerComposeArgs);
     ls.on("close", async code => {
       await status.stop();
       if (code === 0) {
@@ -336,6 +445,12 @@ async function installContainersForHub(options) {
           chalk.green.bold("Success")
         );
         await installDNSResolver(options);
+      } else {
+        console.log(
+          "%s Dorcas Hub Installation Code: " + code,
+          chalk.red.bold("Error")
+        );
+        process.exit(1);
       }
     });
   } catch (err) {
@@ -363,7 +478,7 @@ async function setupAdminAccount(options) {
         client_id: options.clientId,
         client_secret: options.clientSecret
       };
-      let res = await createUser(data);
+      let res = await createUser(data, options);
       if (typeof res !== "undefined") {
         await status.stop();
         console.log(
@@ -377,7 +492,7 @@ async function setupAdminAccount(options) {
           "://" +
           params.general.host +
           ":" +
-          params.docker.services.hub_web.port;
+          (params.docker.services.hub_web.port + options.port_increment);
         let open_domain_dns =
           (options.answers.dns_resolver === "valet"
             ? "https"
@@ -410,21 +525,28 @@ async function setupAdminAccount(options) {
     }, 7500);
   } catch (err) {
     await status.stop();
+    console.log(chalk.red.bold(`Admin Account Creation Error: ${err}`));
   }
 }
 
-async function createUser(body) {
+async function createUser(body, options) {
   let create_url =
     params.general.http_scheme +
     "://" +
     params.general.host +
     ":" +
-    params.docker.services.core_web.port +
+    (params.docker.services.core_web.port + options.port_increment) +
     "/" +
     params.general.path_core_user_register;
 
+  if (options.debugMode) {
+    console.log("DEBUG: Admin User Creation String: ");
+    console.log(create_url);
+    console.log(body);
+  }
+
   let res = await axios.post(create_url, body).catch(err => {
-    console.log(chalk.red.bold(`${err}`));
+    console.log(chalk.red.bold(`User Creation Error: ${err}`));
     process.exit();
   });
   return res.data.data;
@@ -454,20 +576,27 @@ async function setupHubENV(options) {
   let host_port_core =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.core_web.port;
+      : ":" + (params.docker.services.core_web.port + options.port_increment);
   let host_port_hub =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.hub_web.port;
-
+      : ":" + (params.docker.services.hub_web.port + options.port_increment);
+  //"base64:I3NFdR+AFWLg8OlU535RGibdUiJlFhQzoHTyhVylNec="
   let data = {
     APP_NAME: "Hub",
-    APP_ENV: "production",
-    APP_KEY: "base64:I3NFdR+AFWLg8OlU535RGibdUiJlFhQzoHTyhVylNec=",
-    APP_DEBUG: "true",
+    APP_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
+    APP_KEY: Str.random(32),
+    APP_DEBUG: options.template.toLowerCase() == "production" ? "true" : "true",
     APP_LOG_LEVEL: "debug",
+    DORCAS_EDITION: "business",
     SDK_HOST_PRODUCTION:
-      "http://" + params.docker.services.core_web.name + ":80",
+      "http://" +
+      params.docker.services.core_web.name +
+      options.container_name_addon +
+      ":80",
     APP_URL: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     APP_URL_STATIC: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     DEPLOY_ENV: "docker",
@@ -475,15 +604,19 @@ async function setupHubENV(options) {
       options.answers.dns === "dns"
         ? options.answers.domain
         : `localhost:${params.docker.services.hub_web.port}`,
-    DORCAS_BASE_URL: `http://${params.docker.services.core_web.name}:80`,
+    DORCAS_BASE_URL: `http://${params.docker.services.core_web.name +
+      options.container_name_addon}:80`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
-    DORCAS_ENV: "production",
+    DORCAS_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
     DB_CONNECTION: "mysql",
-    DB_HOST: params.docker.services.mysql.name,
+    DB_HOST: params.docker.services.mysql.name + options.container_name_addon,
     DB_PORT: "3306",
     DB_DATABASE: params.docker.services.mysql.db_hub,
     DB_USERNAME: params.docker.services.mysql.user,
-    DB_PASSWORD: params.docker.services.mysql.password,
+    DB_PASSWORD: options.databasePassword,
     BROADCAST_DRIVER: "pusher",
     CACHE_DRIVER: "redis",
     QUEUE_DRIVER: "redis",
@@ -491,12 +624,13 @@ async function setupHubENV(options) {
     SESSION_DRIVER: "redis",
     SESSION_LIFETIME: "120",
     SESSION_CONNECTION: "default",
-    REDIS_HOST: params.docker.services.redis.name,
+    REDIS_HOST:
+      params.docker.services.redis.name + options.container_name_addon,
     REDIS_PASSWORD: "null",
     REDIS_PORT: "6379",
     REDIS_CLIENT: "predis",
     MAIL_DRIVER: "smtp",
-    MAIL_HOST: params.docker.services.smtp.name,
+    MAIL_HOST: params.docker.services.smtp.name + options.container_name_addon,
     MAIL_PORT: "1025",
     DORCAS_CLIENT_ID: options.clientId,
     DORCAS_CLIENT_SECRET: options.clientSecret,
@@ -520,29 +654,34 @@ async function setupHubENV(options) {
   });
 }
 
-async function checkDatabaseConnectionCORE(callback) {
-  const connection = mysql.createConnection({
+async function checkDatabaseConnectionCORE(options, callback) {
+  let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
-    password: params.docker.services.mysql.password,
-    port: params.docker.services.mysql.port,
+    password: options.databasePassword,
+    port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
-  });
-  const status = new Spinner("Connecting to CORE Database...");
+  };
+
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode) {
+    console.log("DEBUG: Core DB Connection String: ");
+    console.log(connection_string);
+  }
+
+  const status = new Spinner("Connecting to Database...");
   status.start();
   connection.connect(async function(err) {
     if (err) {
       callback(false);
-      console.log(
-        "%s Database Connection to CORE Failed",
-        chalk.red.bold("error")
-      );
+      console.log("%s Database Connection Failed", chalk.red.bold("error"));
       connection.end();
       await status.stop();
     } else {
       await status.stop();
       console.log(
-        "%s Database Connection to CORE Established",
+        "%s Database Connection Established",
         chalk.green.bold("success")
       );
       connection.end();
@@ -551,15 +690,22 @@ async function checkDatabaseConnectionCORE(callback) {
   });
 }
 
-async function checkOAuthTablesCORE(callback) {
-  const connection = mysql.createConnection({
+async function checkOAuthTablesCORE(options, callback) {
+  let connection_string = {
     host: params.docker.services.mysql.host,
     user: params.docker.services.mysql.user,
-    password: params.docker.services.mysql.password,
-    port: params.docker.services.mysql.port,
+    password: options.databasePassword,
+    port: params.docker.services.mysql.port + options.port_increment,
     database: params.docker.services.mysql.db_core
-  });
-  const status = new Spinner("Connecting to CORE Database...");
+  };
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode == "yes") {
+    console.log("DEBUG: OAuth DB Connection String: ");
+    console.log(connection_string);
+  }
+
+  const status = new Spinner("Connecting to Database...");
   status.start();
   connection.query("SELECT * FROM oauth_clients", async function(
     err,
@@ -572,7 +718,10 @@ async function checkOAuthTablesCORE(callback) {
       connection.end();
       callback(false);
     } else {
-      console.log("%s Connection Instantiated", chalk.green.bold("success"));
+      console.log(
+        "%s OAuth Connection Instantiated",
+        chalk.green.bold("success")
+      );
       await status.stop();
       connection.end();
       callback(true);
@@ -586,12 +735,17 @@ async function setupDorcasCoreOAuth(options) {
     "://" +
     params.general.host +
     ":" +
-    params.docker.services.core_web.port +
+    (params.docker.services.core_web.port + options.port_increment) +
     "/" +
     params.general.path_core_oauth_setup;
-  //console.log(setup_url);
+
+  if (options.debugMode) {
+    console.log("DEBUG: OAuth Setup URL: ");
+    console.log(setup_url);
+  }
+
   let res = await axios.post(setup_url).catch(err => {
-    console.log(chalk.red.bold(`${err}`));
+    console.log("Error setting up CORE OAuth: " + chalk.red.bold(`${err}`));
     process.exit(1);
   });
   return res.data;
@@ -620,18 +774,23 @@ async function setupCoreENV(options) {
   let host_port_core =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.core_web.port;
+      : ":" + (params.docker.services.core_web.port + options.port_increment);
   let host_port_hub =
     options.answers.dns === "dns"
       ? ""
-      : ":" + params.docker.services.hub_web.port;
+      : ":" + (params.docker.services.hub_web.port + options.port_increment);
 
   let data = {
     APP_NAME: "Dorcas",
-    APP_ENV: "production",
-    APP_KEY: "base64:qY8iqi+rdNRCoIwJMHOSIJttWywy5F2TRQDj8H2ju9g=",
-    APP_DEBUG: "true",
+    APP_ENV:
+      options.template.toLowerCase() == "production"
+        ? "production"
+        : "development",
+    APP_KEY: Str.random(32),
+    APP_DEBUG:
+      options.template.toLowerCase() == "production" ? "false" : "true",
     APP_LOG_LEVEL: "debug",
+    DORCAS_EDITION: "business",
     DORCAS_HOST_API: `${host_scheme}://${host_domain_core}${host_port_core}`,
     DORCAS_HOST_HUB: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
     DORCAS_BASE_DOMAIN: options.answers.domain,
@@ -640,25 +799,27 @@ async function setupCoreENV(options) {
     APP_URL_STATIC: `${host_scheme}://${host_domain_core}${host_port_core}`,
     DEPLOY_ENV: "docker",
     DB_CONNECTION: "mysql",
-    DB_HOST: params.docker.services.mysql.name,
+    DB_HOST: params.docker.services.mysql.name + options.container_name_addon,
     DB_PORT: "3306",
     DB_DATABASE: params.docker.services.mysql.db_core,
     DB_USERNAME: params.docker.services.mysql.user,
-    DB_PASSWORD: params.docker.services.mysql.password,
-    DB_HUB_HOST: params.docker.services.mysql.name,
+    DB_PASSWORD: options.databasePassword,
+    DB_HUB_HOST:
+      params.docker.services.mysql.name + options.container_name_addon,
     DB_HUB_PORT: "3306",
     DB_HUB_DATABASE: params.docker.services.mysql.db_hub,
     DB_HUB_USERNAME: params.docker.services.mysql.user,
-    DB_HUB_PASSWORD: params.docker.services.mysql.password,
+    DB_HUB_PASSWORD: options.databasePassword,
     CACHE_DRIVER: "redis",
     QUEUE_DRIVER: "redis",
     FILESYSTEM_DRIVER: "file",
-    REDIS_HOST: params.docker.services.redis.name,
+    REDIS_HOST:
+      params.docker.services.redis.name + options.container_name_addon,
     REDIS_PASSWORD: "null",
     REDIS_PORT: "6379",
     REDIS_CLIENT: "predis",
     MAIL_DRIVER: "smtp",
-    MAIL_HOST: params.docker.services.smtp.name,
+    MAIL_HOST: params.docker.services.smtp.name + options.container_name_addon,
     MAIL_PORT: "1025"
   };
 
@@ -699,8 +860,6 @@ async function downloadFiles(options, app) {
   repoDownloadLink = `https://github.com/${repoArray[`git_repo_${app}`] +
     "/tarball/" +
     repoArray[`git_branch_${app}`]}`;
-  //https://github.com/dorcas-io/core-business//tarball/ft-develop
-  //console.log(repoDownloadLink)
 
   if (repoDownloadLink.length == 0) {
     console.log("%s Invalid repository URL", chalk.red.bold("Error"));
@@ -894,35 +1053,66 @@ async function installDNSResolver(options) {
     console.log("Hub Domain Prefix is: " + chalk.yellow.bold(domain_prefix));
     console.log("Hub Domain TLD is: " + chalk.yellow.bold(domain_tld));
     console.log(
-      "Please enter your system password to enable Valet DNS site configuration for " +
-        options.answers.domain +
+      "Please enter your (mac) system password to enable Valet DNS site configuration for " +
+        chalk.green.bold(options.answers.domain) +
+        " and " +
+        chalk.green.bold("core." + options.answers.domain) +
         "..."
     );
     status.stop();
 
-    let open_domain_localhost =
+    let localhost_url_web =
       params.general.http_scheme +
       "://" +
       params.general.host +
       ":" +
-      params.docker.services.hub_web.port;
+      (params.docker.services.hub_web.port + options.port_increment);
+
+    let localhost_url_core =
+      params.general.http_scheme +
+      "://" +
+      params.general.host +
+      ":" +
+      (params.docker.services.core_web.port + options.port_increment);
+
+    let dockerComposeArgsWeb = [
+      `proxy`,
+      `${domain_prefix}`,
+      `${localhost_url_web}`
+    ];
+
+    let dockerComposeArgsCore = [
+      `proxy`,
+      `core.${domain_prefix}`,
+      `${localhost_url_core}`
+    ];
 
     try {
-      let ls = await spawn("valet", [
-        `proxy`,
-        `${domain_prefix}`,
-        `${open_domain_localhost}`
-      ]);
+      let ls = await spawn("valet", dockerComposeArgsWeb);
 
       ls.on("close", async code => {
         //status.stop();
 
         if (code === 0) {
           console.log(
-            "%s Valet Site configuration successfull",
+            "%s WEB Site configuration successful",
             chalk.green.bold("Success")
           );
           await setupAdminAccount(options);
+        }
+      });
+
+      let ls2 = await spawn("valet", dockerComposeArgsCore);
+
+      ls2.on("close", async code => {
+        //status.stop();
+
+        if (code === 0) {
+          console.log(
+            "%s CORE Site configuration successful",
+            chalk.green.bold("Success")
+          );
+          //await setupAdminAccount(options);
         }
       });
     } catch (err) {

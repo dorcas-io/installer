@@ -618,6 +618,7 @@ VALUES
 /*!40000 ALTER TABLE `countries` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `coupon_usages`
 --
@@ -2140,6 +2141,7 @@ VALUES
 
 /*!40000 ALTER TABLE `states` ENABLE KEYS */;
 UNLOCK TABLES;
+
 
 
 --
