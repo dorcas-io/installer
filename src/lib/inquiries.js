@@ -1,7 +1,7 @@
 const path = require("path");
 const params = require(path.join(__dirname, "./params.js"));
 
-exports.inquiries = [
+exports.business_inquiries = [
   {
     name: "template",
     type: "list",

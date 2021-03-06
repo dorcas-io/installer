@@ -2,7 +2,8 @@
 
 var params = {
   general: {
-    title: "Dorcas Installer",
+    title: "Dorcas",
+    title_full: "Dorcas Framework",
     install_output_folder: "dorcas-business",
     http_scheme: "http",
     host: "127.0.0.1",
