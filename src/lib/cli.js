@@ -67,12 +67,7 @@ async function cli(args) {
         argCompany: args["--company"],
         argPhone: args["--phone"],
         argFeatures: args["--features"] || "all",
-
-        argDomain:
-          args["--domain"] ||
-          (args["--template"] == "production"
-            ? params.general.default_domain_production
-            : params.general.default_domain_development),
+        argDomain: args["--domain"],
         argDNS: args["--dns"] || "localhost",
         argDNSResolver: args["--dns-resolver"] || "valet",
         argAgreeementTOS: args["--agreement"]
@@ -166,8 +161,11 @@ async function cli(args) {
             optionsArguments["feature_select"] = options.argFeatures;
           }
           if (!options.argDomain) {
-            missingArguments["domain"] =
-              "Enter a Domain Name for this installation";
+            //missingArguments["domain"] = "Enter a Domain Name for this installation";
+            optionsArguments["domain"] =
+              options.argTemplate == "production"
+                ? params.general.default_domain_production
+                : params.general.default_domain_development;
           } else {
             optionsArguments["domain"] = options.argDomain;
           }
