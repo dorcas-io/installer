@@ -15,7 +15,7 @@ async function installRequirements() {
   var count_requirements = 7;
   var count_checks = 0;
 
-  console.log("\n");
+  //console.log("\n");
 
   const dorcasRequirements = new Listr([
     {
@@ -228,7 +228,7 @@ async function installRequirements() {
     .run()
     .then(result => {
       if (count_checks >= count_requirements) {
-        console.log("\n");
+        //console.log("\n");
         console.log(
           `%s All ${count_checks} of ${count_requirements} Installation Requirement(s) passed`,
           chalk.green.bold("Success")
@@ -237,7 +237,7 @@ async function installRequirements() {
 
         status.stop();
       } else {
-        console.log("\n");
+        //console.log("\n");
         console.log(
           `%s ${count_checks} of ${count_requirements} Installation Requirement(s) passed. All must be met to proceed`,
           chalk.yellow.bold("Warning")
@@ -248,7 +248,7 @@ async function installRequirements() {
       }
     })
     .catch(err => {
-      console.log("\n");
+      //console.log("\n");
       console.error(
         "%s Installation Requirements failed: " + err,
         chalk.red.bold("Error")

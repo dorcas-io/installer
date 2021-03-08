@@ -65,7 +65,7 @@ async function installBusiness(options) {
     if (options.answers.agreement === "no") {
       console.log(
         "%s You did not agree to the Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement",
-        chalk.red.bold("Installation Failed:")
+        chalk.red.bold("Installation Failed: ")
       );
       process.exit(1);
     }
@@ -88,7 +88,7 @@ async function installBusiness(options) {
     status.stop();
   } catch (err) {
     console.error(
-      "%s Error Initializing Installation" + err,
+      "%s Error Initializing Installation: " + err,
       chalk.red.bold("ERROR")
     );
     await status.stop();

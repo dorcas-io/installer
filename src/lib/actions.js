@@ -17,7 +17,7 @@ const access = util.promisify(fs.access);
 exports.access = access;
 const params = require(path.join(__dirname, "./params.js"));
 exports.params = params;
-const { installBusiness } = require("./installBusiness");
+const installBusiness = require(path.join(__dirname, "./installBusiness.js"));
 
 clear();
 console.log(
@@ -35,22 +35,34 @@ console.log(
 );
 
 function installerHelp() {
-  console.log(chalk.yellowBright(`Below are the key commands you can run: \n`));
+  console.log(chalk.yellow(`BELOW ARE THEY COMMANDS YOU CAN RUN: \n`));
   console.log(
-    chalk.green.bold("install-business") +
-      ` Run the ${params.general.title} Business Edition Installer like so: ` +
-      chalk.white.italic.bold("dorcas install-business")
+    "- " +
+      chalk.green.bold("install-business") +
+      ` Run the ${
+        params.general.title
+      } Business Edition Installer like so: ${chalk.gray.italic.bold(
+        "dorcas install-business"
+      )}. ` +
+      `Add the ${chalk.gray.italic.bold(
+        "--interactive"
+      )} argument for an interactive prompt for each argument. ` +
+      `Add the ${chalk.gray.italic.bold(
+        "--argument"
+      )} argument to specify all arguments via command line.` +
+      `\n`
   );
   console.log(
-    chalk.green.bold("help") +
-      `Show all available commands like so: ` +
-      chalk.white.italic.bold("dorcas help")
+    "- " +
+      chalk.green.bold("help") +
+      ` Show all available commands like so: ` +
+      chalk.gray.italic.bold("dorcas help")
   );
 
-  console.log("\n");
   console.log(
     `You can exit the ${params.general.title} CLI at any time by hitting CTRL + C`
   );
+  console.log("\n");
 }
 
 async function initDorcas(options) {
