@@ -6,10 +6,10 @@ const CLI = require("clui");
 const Spinner = CLI.Spinner;
 const execa = require("execa");
 const chalk = require("chalk");
-const Str = require("@supercharge/strings");
+//const Str = require("@supercharge/strings");
 
 async function installRequirements() {
-  const status = new Spinner("Checking for Requirements...");
+  const status = new Spinner("Checking for Installation Requirements...");
   status.start();
 
   var count_requirements = 7;

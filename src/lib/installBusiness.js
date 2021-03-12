@@ -301,7 +301,7 @@ async function installContainersForCore(options, params) {
     }
 
     if (options.debugMode == "yes") {
-      console.log("DEBUG: Spawning docker-compose: ");
+      console.log("DEBUG: Spawning docker-compose for CORE: ");
       console.log(dockerComposeArgs);
     }
 
@@ -433,8 +433,10 @@ async function installContainersForHub(options) {
           `_hub`}`
       ];
     }
-
-    console.log(dockerComposeArgs);
+    if (options.debugMode == "yes") {
+      console.log("DEBUG: Spawning docker-compose for HUB: ");
+      console.log(dockerComposeArgs);
+    }
 
     const ls = spawn("docker-compose", dockerComposeArgs);
     ls.on("close", async code => {
@@ -511,7 +513,7 @@ async function setupAdminAccount(options) {
             " (" +
             res.email +
             "), " +
-            "thank you for installing the Dorcas Hub." +
+            "thank you for installing the Dorcas HUB.\n" +
             " Visit this URL address " +
             chalk.green.bold(open_url) +
             " and login with your earlier provided Admin " +
@@ -1117,12 +1119,14 @@ async function installDNSResolver(options) {
       });
     } catch (err) {
       console.log(
-        "%s Valet Site configuration error:" + err,
+        "%s Valet Site configuration error: " + err,
         chalk.red.bold("Error")
       );
       await status.stop();
     } finally {
     }
+  } else if (options.answers.dns === "localhost") {
+    await setupAdminAccount(options);
   }
 }
 

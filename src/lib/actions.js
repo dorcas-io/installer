@@ -18,6 +18,11 @@ exports.access = access;
 const params = require(path.join(__dirname, "./params.js"));
 exports.params = params;
 const installBusiness = require(path.join(__dirname, "./installBusiness.js"));
+const deployRequirements = require(path.join(
+  __dirname,
+  "./deployRequirements.js"
+));
+const heroku = require(path.join(__dirname, "../platforms/heroku/Heroku.js"));
 
 clear();
 console.log(
@@ -33,16 +38,17 @@ console.log(
 console.log(
   `You can exit the ${params.general.title} CLI at any time by hitting CTRL + C`
 );
+console.log("\n\n");
 
-function installerHelp() {
+function cmdHelp() {
   console.log(chalk.yellow(`BELOW ARE THEY COMMANDS YOU CAN RUN: \n`));
   console.log(
     "- " +
-      chalk.green.bold("install-business") +
+      chalk.green.bold("install --business") +
       ` Run the ${
         params.general.title
       } Business Edition Installer like so: ${chalk.gray.italic.bold(
-        "dorcas install-business"
+        "dorcas install --business"
       )}. ` +
       `Add the ${chalk.gray.italic.bold(
         "--interactive"
@@ -58,7 +64,7 @@ function installerHelp() {
       ` Show all available commands like so: ` +
       chalk.gray.italic.bold("dorcas help")
   );
-
+  console.log("\n");
   console.log(
     `You can exit the ${params.general.title} CLI at any time by hitting CTRL + C`
   );
@@ -67,22 +73,25 @@ function installerHelp() {
 
 async function initDorcas(options) {
   switch (options.defaultAction) {
-    case "install-business":
-      installBusiness.installBusiness(options);
+    case "install":
+      if (options.businessEdition) {
+        installBusiness.installBusiness(options);
+      }
       break;
-    case "load":
-      if (options.module == "no-module") {
-        console.log("%s No Module Specified", chalk.blue.bold("Modullo LOAD:"));
-      } else {
-        //installBusinessModule.installBusinessModule(options);
+    case "deploy":
+      if (options.deployPlatform == "heroku") {
+        let req = heroku.deployRequirements();
+        //console.log(req);
+        await deployRequirements.init("heroku", req[0], req[1]);
+        heroku.deployInit();
       }
       break;
     case "help":
-      installerHelp();
+      cmdHelp();
       break;
     default:
       installerHelp();
   }
 }
 
-exports.processCLI = initDorcas;
+exports.initDorcas = initDorcas;
