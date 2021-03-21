@@ -33,7 +33,6 @@ async function cli(args) {
           "--debug": Boolean,
           "--arguments": Boolean,
           "--interactive": Boolean,
-          "--debug": Boolean,
           "--template": String,
           "--firstname": String,
           "--lastname": String,
@@ -255,7 +254,7 @@ async function cli(args) {
       case "deploy":
         if (
           !options.deployPlatform ||
-          !["heroku"].includes(options.deployPlatform)
+          !["heroku", "aws-lightsail"].includes(options.deployPlatform)
         ) {
           console.error(
             "%s Please specify a valid Deployment Platform!",
@@ -265,7 +264,7 @@ async function cli(args) {
         }
         return {
           ...options,
-          template: options.template || defaultTemplate
+          template: "deploy"
         };
         break;
 

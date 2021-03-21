@@ -23,6 +23,7 @@ const deployRequirements = require(path.join(
   "./deployRequirements.js"
 ));
 const heroku = require(path.join(__dirname, "../platforms/heroku/Heroku.js"));
+const aws = require(path.join(__dirname, "../platforms/aws/AWS.js"));
 
 clear();
 console.log(
@@ -79,11 +80,35 @@ async function initDorcas(options) {
       }
       break;
     case "deploy":
+      const fullPathName = __dirname + "/main.js";
+      const templateDir = path.resolve(
+        fullPathName.substr(fullPathName.indexOf("/")),
+        "../../templates",
+        options.template.toLowerCase()
+      );
+      options.templateDirectory = templateDir;
+
+      options = {
+        ...options,
+        targetDirectory:
+          process.cwd() +
+          `/` +
+          params.general.deploy_output_folder +
+          `-deploy-` +
+          (options.deployPlatform || "none")
+      };
+
       if (options.deployPlatform == "heroku") {
         let req = heroku.deployRequirements();
         //console.log(req);
         await deployRequirements.init("heroku", req[0], req[1]);
-        heroku.deployInit();
+        heroku.deployInit(options);
+      }
+      if (options.deployPlatform == "aws-lightsail") {
+        let req = aws.deployRequirements();
+        //console.log(req);
+        await deployRequirements.init("aws", req[0], req[1]);
+        aws.deployInit(options, "lightsail");
       }
       break;
     case "help":

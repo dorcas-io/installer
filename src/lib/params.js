@@ -5,6 +5,7 @@ var params = {
     title: "Dorcas",
     title_full: "Dorcas Framework",
     install_output_folder: "dorcas-business",
+    deploy_output_folder: "dorcas-business",
     http_scheme: "http",
     host: "127.0.0.1",
     port: 18030,
@@ -12,9 +13,26 @@ var params = {
     path_core_user_register: "register",
     path_hub_admin_login: "login",
     default_domain_production: "dorcas-prod.test",
-    default_domain_development: "dorcas-dev.test"
+    default_domain_development: "dorcas-dev.test",
+    iaac_repo: "hostvilleng/iaac"
   },
   versions: {
+    deploy: {
+      services: [
+        "proxy",
+        "core_php",
+        "core_web",
+        "hub_php",
+        "hub_web",
+        "mysql",
+        "redis",
+        "smtp"
+      ],
+      git_repo_core: "dorcas-io/core-business",
+      git_branch_core: "dev",
+      git_repo_hub: "dorcas-io/hub-business",
+      git_branch_hub: "dev"
+    },
     production: {
       services: [
         "proxy",

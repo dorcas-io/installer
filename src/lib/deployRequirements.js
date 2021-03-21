@@ -15,7 +15,7 @@ async function init(platform, additionalRequirements, additionalChecks) {
   );
   status.start();
 
-  var count_requirements = 1;
+  var count_requirements = 2;
   var count_checks = 0;
 
   let listOfRequirements = [
@@ -42,6 +42,24 @@ async function init(platform, additionalRequirements, additionalChecks) {
                     ctx.ansible = false;
                     task.skip("Ansible not available");
                     throw new Error("Ansible not available");
+                  })
+            },
+            {
+              title: "Checking for Terraform",
+              task: (ctx, task) =>
+                execa("terraform", ["-v"])
+                  .then(result => {
+                    if (result.stdout.includes("Terraform v")) {
+                      count_checks++;
+                    } else {
+                      task.skip("Terraform not available");
+                      throw new Error("Terraform not available");
+                    }
+                  })
+                  .catch(() => {
+                    ctx.ansible = false;
+                    task.skip("Terraform not available");
+                    throw new Error("Terraform not available");
                   })
             }
           ],

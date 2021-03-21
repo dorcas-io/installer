@@ -17,21 +17,6 @@ const mysql = require("mysql");
 const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "./params.js"));
 
-// clear();
-// console.log(
-//   chalk.yellow(
-//     figlet.textSync(params.general.title, { horizontalLayout: "full" })
-//   )
-// );
-
-// console.log(
-//   "Welcome to the Business Edition Installer v" +
-//     require(path.join(__dirname, "../../package.json")).version
-// );
-// console.log(
-//   "You can stop this installation process at any time by hitting CTRL + C"
-// );
-
 async function installBusiness(options) {
   const status = new Spinner("Initializing Installation...");
   await status.start();
