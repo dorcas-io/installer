@@ -306,7 +306,10 @@ async function configureAddons(options, app) {
     let configureCommand = `mysql --host=${options.deployDBHost} --user=${options.deployDBUser} --password=${options.deployDBPass} --reconnect ${options.deployDBCore} < ${options.templateDirectory}/mysql/core_shareddb.sql && mysql --host=${options.deployDBHost} --user=${options.deployDBUser} --password=${options.deployDBPass} --reconnect ${options.deployDBCore} < ${options.templateDirectory}/mysql/hub_shareddb.sql`;
 
     if (options.debugMode) {
-      console.log(`%s Configuring databases ...`, chalk.green.bold("CLI: "));
+      console.log(
+        `%s Configuring databases...(please wait)`,
+        chalk.green.bold("CLI: ")
+      );
     }
 
     if (options.debugMode) {
@@ -333,14 +336,16 @@ async function configureAddons(options, app) {
           "%s Addons Configuration Completed",
           chalk.green.bold("Heroku: ")
         );
-        await utilities.setupCoreENV(options);
+        let results = await utilities.setupCoreENV(options);
+
+        //console.log(results)
 
         console.log("\n");
         console.log(
           "%s Preparing Dorcas Application for Heroku...",
           chalk.green.bold("CLI: ")
         );
-        await utilities.downloadFiles(options, app);
+        await utilities.downloadFiles(results.options, app);
       }
     });
   } catch (err) {
@@ -370,14 +375,17 @@ async function deployDorcasApp(options, app, appFolder) {
   };
 
   try {
-    let deployCommands = `cp ${options.deployENVCore} ${appFolder}/.env && cd ${appFolder} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git init && heroku git:remote -a ${options.herokuAppName} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git add . && git commit -am "Heroku Deploy" && git push heroku master`;
+    //lets start with environmental (heroku config) variables
+    //let deployCommands = options.herokuConfigs;
+    let deployCommands = `heroku config:set --app ${options.herokuAppName} ${options.herokuConfigs}`;
 
-    if (options.debugMode) {
-      console.log(
-        `%s Deploying Dorcas ${app.toUpperCase()} App...`,
-        chalk.green.bold("CLI: ")
-      );
-    }
+    //add final deploy commannds
+    deployCommands += ` && cp ${options.deployENVCore} ${appFolder}/.env && cd ${appFolder} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git init && heroku git:remote -a ${options.herokuAppName} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git add . && git commit -am "Heroku Deploy" && git push heroku master`;
+
+    console.log(
+      `%s Deploying Dorcas ${app.toUpperCase()} App...`,
+      chalk.green.bold("CLI: ")
+    );
 
     if (options.debugMode) {
       console.log(

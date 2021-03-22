@@ -526,10 +526,33 @@ async function setupCoreENV(options) {
   }
 
   if (options.template.toLowerCase() == "deploy") {
-    options = {
-      ...options,
-      deployENVCore: sourcePath
-    };
+    if (options.deployPlatform == "heroku") {
+      //if platform is heroku, create a config set  string from  the ENVs
+      //heroku config:set DB_CONNECTION=mysql --app=dorcas-business-core-azdsl3ls
+      let herokuConfigs = "";
+      for (var key in data) {
+        if (!data.hasOwnProperty(key)) {
+          continue;
+        } // skip this property
+        //herokuConfigs += `heroku config:set ${key}=${data[key]} &&`;
+        herokuConfigs += `${key}=${data[key]} `;
+      }
+      //herokuConfigs = Str(herokuConfigs).replaceLast("&&","").trim().get();
+      herokuConfigs = Str(herokuConfigs)
+        .rtrim()
+        .get();
+
+      options = {
+        ...options,
+        deployENVCore: sourcePath,
+        herokuConfigs: herokuConfigs
+      };
+
+      return {
+        env: data,
+        options: options
+      };
+    }
   }
 
   await fs.writeFile(sourcePath, envfile.stringify(data), err => {
