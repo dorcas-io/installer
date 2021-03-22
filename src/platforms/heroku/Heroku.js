@@ -14,6 +14,7 @@ const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "../../lib/params.js"));
 var _ = require("lodash/core");
 const utilities = require(path.join(__dirname, "../../lib/utilities.js"));
+const open = require("open");
 
 function deployRequirements(options) {
   var count_checks = 0;
@@ -164,10 +165,18 @@ async function createDorcasApp(options, app) {
           deployHostCore: Str(herokuAppURL)
             .replace("https://", "")
             .replace("/", "")
+            .trim()
             .get(),
           deployDomain: Str(herokuAppURL)
             .replace("https://", "")
             .replace("/", "")
+            .trim()
+            .get(),
+          deployURLCore: Str(herokuAppURL)
+            .trim()
+            .get(),
+          deployGitCore: Str(herokuGitURL)
+            .trim()
             .get()
         };
       }
@@ -588,6 +597,9 @@ async function deployDorcasApp(options, app, appFolder) {
       if (code === 0) {
         console.log("%s Deployment Completed", chalk.green.bold("Heroku: "));
         console.log("%s Opening...", chalk.green.bold("Heroku: "));
+        // Opens the URL in the default browser.
+        await open(option.deployURLCore);
+        //await open('https://sindresorhus.com', {app: {name: 'google chrome', arguments: ['--incognito']}});
       }
     });
   } catch (err) {
