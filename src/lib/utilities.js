@@ -467,14 +467,32 @@ async function setupCoreENV(options) {
     options.template.toLowerCase() == "deploy"
       ? options.deployDBPass
       : options.databasePassword;
+  let db_port =
+    options.template.toLowerCase() == "deploy" ? options.deployDBPort : "3306";
   let redis_host =
     options.template.toLowerCase() == "deploy"
       ? options.deployRedisHost
       : params.docker.services.redis.name + options.container_name_addon;
+  let redis_pass =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployRedisPass
+      : "null";
+  let redis_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployRedisPort
+      : "6379";
+  let mail_driver =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployMailDriver
+      : "smtp";
   let mail_host =
     options.template.toLowerCase() == "deploy"
       ? options.deployMailHost
       : params.docker.services.smtp.name + options.container_name_addon;
+  let mail_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployMailPort
+      : "1025";
 
   let data = {
     APP_NAME: "Dorcas",
@@ -497,12 +515,12 @@ async function setupCoreENV(options) {
       options.template.toLowerCase() == "deploy" ? "deploy" : "docker",
     DB_CONNECTION: "mysql",
     DB_HOST: db_host,
-    DB_PORT: "3306",
+    DB_PORT: db_port,
     DB_DATABASE: db_database_core,
     DB_USERNAME: db_username,
     DB_PASSWORD: db_password,
     DB_HUB_HOST: db_host,
-    DB_HUB_PORT: "3306",
+    DB_HUB_PORT: db_port,
     DB_HUB_DATABASE: db_database_hub,
     DB_HUB_USERNAME: db_username,
     DB_HUB_PASSWORD: db_password,
@@ -510,12 +528,12 @@ async function setupCoreENV(options) {
     QUEUE_DRIVER: "redis",
     FILESYSTEM_DRIVER: "file",
     REDIS_HOST: redis_host,
-    REDIS_PASSWORD: "null",
-    REDIS_PORT: "6379",
+    REDIS_PASSWORD: redis_pass,
+    REDIS_PORT: redis_port,
     REDIS_CLIENT: "predis",
-    MAIL_DRIVER: "smtp",
+    MAIL_DRIVER: mail_driver,
     MAIL_HOST: mail_host,
-    MAIL_PORT: "1025"
+    MAIL_PORT: mail_port
   };
 
   if (options.debugMode) {

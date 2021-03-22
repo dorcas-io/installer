@@ -45,7 +45,8 @@ async function cli(args) {
           "--dns": String,
           "--dns_resolver": String,
           "--agreement": String,
-          "--platform": String
+          "--platform": String,
+          "--premium": Boolean
         },
         { argv: rawArgs.slice(2) }
       );
@@ -71,7 +72,8 @@ async function cli(args) {
         argDNS: args["--dns"] || "localhost",
         argDNSResolver: args["--dns_resolver"] || "valet",
         argAgreeementTOS: args["--agreement"],
-        deployPlatform: args["--platform"]
+        deployPlatform: args["--platform"],
+        deployPremium: args["--premium"] || false
       };
     } catch (err) {
       console.error(
