@@ -90,13 +90,7 @@ async function deployInit(options) {
 
       if (data.includes("Logged in as")) {
         process.setMaxListeners(0);
-        await createDorcasApp(options, "core"); // create app
-
-        //create db
-        //create redis
-        // download & prepare core-business
-        //await utilities.downloadFiles(options, "core"); //start file
-        // deploy core business
+        await createApp(options, "core", "default"); // create CORE app
       }
     });
 
@@ -124,8 +118,10 @@ async function deployInit(options) {
 
 exports.deployInit = deployInit;
 
-async function createDorcasApp(options, app) {
-  const status = new Spinner("Creating the Dorcas Application...");
+async function createApp(options, app, heroku_type) {
+  const status = new Spinner(
+    `Creating the Dorcas ${app.toUpperCase()} Application...`
+  );
   status.start();
 
   status.stop();
@@ -137,15 +133,22 @@ async function createDorcasApp(options, app) {
       .replaceAll("-", "1");
     let herokuAppName = `dorcas-business-${app}-${randomString}`.toLowerCase();
 
-    options = {
-      ...options,
-      herokuAppName: herokuAppName
-    };
+    if (app == "core") {
+      options = {
+        ...options,
+        herokuAppNameCore: herokuAppName
+      };
+    } else if (app == "hub") {
+      options = {
+        ...options,
+        herokuAppNameHub: herokuAppName
+      };
+    }
 
     let herokuAppURL = "";
     let herokuGitURL = "";
 
-    let herokuAppCreate = [`apps:create`, herokuAppName, `--manifest`];
+    let herokuAppCreate = [`apps:create`, herokuAppName]; //, `--manifest`
 
     let ls = await spawn("heroku", herokuAppCreate);
 
@@ -160,25 +163,50 @@ async function createDorcasApp(options, app) {
         let extract = Str(data).split("|");
         herokuAppURL = Str(extract[0]).trim();
         herokuGitURL = Str(extract[1]).trim();
-        options = {
-          ...options,
-          deployHostCore: Str(herokuAppURL)
-            .replace("https://", "")
-            .replace("/", "")
-            .trim()
-            .get(),
-          deployDomain: Str(herokuAppURL)
-            .replace("https://", "")
-            .replace("/", "")
-            .trim()
-            .get(),
-          deployURLCore: Str(herokuAppURL)
-            .trim()
-            .get(),
-          deployGitCore: Str(herokuGitURL)
-            .trim()
-            .get()
-        };
+
+        if (app == "core") {
+          options = {
+            ...options,
+            deployHostCore: Str(herokuAppURL)
+              .replace("https://", "")
+              .replace("/", "")
+              .trim()
+              .get(),
+            deployDomain: Str(herokuAppURL)
+              .replace("https://", "")
+              .replace("/", "")
+              .trim()
+              .get(),
+            deployURLCore: Str(herokuAppURL)
+              .trim()
+              .get(),
+            deployGitCore: Str(herokuGitURL)
+              .trim()
+              .get()
+          };
+        }
+
+        if (app == "hub") {
+          options = {
+            ...options,
+            deployHostHub: Str(herokuAppURL)
+              .replace("https://", "")
+              .replace("/", "")
+              .trim()
+              .get(),
+            deployDomain: Str(herokuAppURL)
+              .replace("https://", "")
+              .replace("/", "")
+              .trim()
+              .get(),
+            deployURLHub: Str(herokuAppURL)
+              .trim()
+              .get(),
+            deployGitHub: Str(herokuGitURL)
+              .trim()
+              .get()
+          };
+        }
       }
     });
 
@@ -195,7 +223,22 @@ async function createDorcasApp(options, app) {
           chalk.green.bold("Heroku: ")
         );
 
-        await createAddons(options, app);
+        if (heroku_type == "default") {
+          if (app == "core") {
+            await createAddons(options, app);
+          } else if (app == "hub") {
+            let results = await utilities.setupHubENV(options);
+
+            console.log("\n");
+            console.log(
+              `%s Preparing Dorcas ${app.toUpperCase()} Application for Heroku...\n`,
+              chalk.green.bold("CLI: ")
+            );
+            await utilities.downloadFiles(results.options, app);
+          }
+        } else {
+          await createManifest(options, app);
+        }
       }
     });
     ls.on("error", async error => {
@@ -207,17 +250,60 @@ async function createDorcasApp(options, app) {
   }
 }
 
+async function createManifest(options, app) {
+  let heroku_yml = {
+    build: {
+      docker: {
+        web: "Dockerfile"
+      }
+    },
+    run: {
+      web: "bundle exec puma -C config/puma.rb"
+    }
+  };
+
+  let herokuYAMLPath =
+    options.targetDirectory + `/heroku.yaml.` + options.template.toLowerCase();
+
+  options = {
+    ...options,
+    deployHerokuYAMLPathHub: herokuYAMLPath
+  };
+
+  await utilities.writeYAML(options, heroku_yml, herokuYAMLPath, async function(
+    result
+  ) {
+    if (result) {
+      console.log(
+        `%s Heroku.yaml successfully written \n`,
+        chalk.green.bold("CLI: ")
+      );
+
+      console.log("\n");
+      console.log(
+        `%s Preparing Dorcas ${app.toUpperCase()} Application for Heroku...\n`,
+        chalk.green.bold("CLI: ")
+      );
+      await utilities.downloadFiles(options, app);
+    } else {
+    }
+  });
+}
+
 async function createAddons(options, app) {
   const status = new Spinner("Provisioning Heroku Addons...");
   status.start();
 
   status.stop();
 
+  let herokuAppName =
+    app == "core" ? options.herokuAppNameCore : options.herokuAppNameHub;
+
   try {
     let addonsCommand = ``;
-    addonsCommand += `heroku addons:create jawsdb:kitefin --version=5.7 --app ${options.herokuAppName} `; //mysql
-    addonsCommand += `&& heroku addons:create rediscloud:30 --app ${options.herokuAppName}`; //redis heroku-redis:hobby-dev
-    addonsCommand += `&& heroku addons:create mailgun:starter --app ${options.herokuAppName} `; //mail
+    addonsCommand += `heroku addons:create jawsdb:kitefin --version=5.7 --app ${herokuAppName} `; //mysql
+    addonsCommand += `&& heroku addons:create rediscloud:30 --app ${herokuAppName}`; //redis heroku-redis:hobby-dev
+    addonsCommand += `&& heroku addons:create mailgun:starter --app ${herokuAppName} `; //mail
 
     if (options.debugMode) {
       console.log(
@@ -226,6 +312,7 @@ async function createAddons(options, app) {
       );
     }
 
+    process.setMaxListeners(0);
     let ls = await spawn(addonsCommand, { shell: true });
 
     ls.stdout.on("data", async data => {
@@ -240,19 +327,11 @@ async function createAddons(options, app) {
       //console.log(code)
       if (code === 0) {
         console.log(
-          "%s Addons Provisioning Successful. Waiting on Configuration Values... \n",
+          "%s Addons Provisioning Successful. Checking on Configuration Values... \n",
           chalk.green.bold("CLI: ")
         );
 
         waitOnConfigs(options, app);
-
-        // console.log("\n");
-        // console.log(
-        //   "%s Configuring Heroku Addons...",
-        //   chalk.green.bold("CLI: ")
-        // );
-
-        // configureAddons(options, app);
       }
     });
   } catch (err) {
@@ -284,7 +363,7 @@ async function waitOnConfigs(options, app) {
       } else {
         setTimeout(async () => {
           console.log(
-            "%s Re-Checking for Configuration Values...\n",
+            "%s Re-Checking on Configuration Values...\n",
             chalk.green.bold("CLI: ")
           );
           await waitOnConfigs(options, app);
@@ -299,9 +378,14 @@ async function waitOnConfigs(options, app) {
 async function checkConfigs(options, app, callback) {
   var configChecks = 0;
 
+  var configOK = false;
+
   var configData = "";
 
-  let checkCommand = `heroku config  --app ${options.herokuAppName} `;
+  let herokuAppName =
+    app == "core" ? options.herokuAppNameCore : options.herokuAppNameHub;
+
+  let checkCommand = `heroku config  --app ${herokuAppName} `;
 
   let ls = await spawn(checkCommand, { shell: true });
 
@@ -329,6 +413,13 @@ async function checkConfigs(options, app, callback) {
 
   ls.stderr.on("data", async data => {
     console.log(`%s ${data}`, chalk.magenta.bold("Input: "));
+    if (
+      Str(data).contains("ERROR") ||
+      Str(data).contains("error") ||
+      Str(data).contains("Error")
+    ) {
+      //throw data;
+    }
     process.stdin.pipe(ls.stdin);
   });
 
@@ -430,13 +521,6 @@ async function extractConfigs(configData, options) {
             .get()
         };
       }
-      // MAILGUN_API_KEY:       ce895c2f1f34b97c5e4b6cf89d1eaf3b-1553bd45-db2c1e2a
-      // MAILGUN_DOMAIN:        sandbox9af2e1ce3b4149588e3f51cf3de53582.mailgun.org
-      // MAILGUN_PUBLIC_KEY:    pubkey-2223d7faa4a14935143438c612119599
-      // MAILGUN_SMTP_LOGIN:    postmaster@sandbox9af2e1ce3b4149588e3f51cf3de53582.mailgun.org
-      // MAILGUN_SMTP_PASSWORD: dee2b135db16410800ff6b5642226887-1553bd45-87154285
-      // MAILGUN_SMTP_PORT:     587
-      // MAILGUN_SMTP_SERVER:   smtp.mailgun.org
 
       if (Str(data).startsWith("MAILGUN")) {
         let extract = Str(data).split(":");
@@ -495,7 +579,7 @@ async function configureAddons(options, app) {
 
     if (options.debugMode) {
       console.log(
-        `%s Configuring databases...(please wait)`,
+        `%s Configuring databases...(please wait) \n`,
         chalk.green.bold("CLI: ")
       );
     }
@@ -515,6 +599,13 @@ async function configureAddons(options, app) {
 
     ls.stderr.on("data", async data => {
       console.log(`%s ${data}`, chalk.magenta.bold("Input: "));
+      if (
+        Str(data).contains("ERROR") ||
+        Str(data).contains("error") ||
+        Str(data).contains("Error")
+      ) {
+        //throw data;
+      }
       process.stdin.pipe(ls.stdin);
     });
     ls.on("close", async code => {
@@ -530,7 +621,7 @@ async function configureAddons(options, app) {
 
         console.log("\n");
         console.log(
-          "%s Preparing Dorcas Application for Heroku...",
+          `%s Preparing Dorcas ${app.toUpperCase()} Application for Heroku... \n`,
           chalk.green.bold("CLI: ")
         );
         await utilities.downloadFiles(results.options, app);
@@ -542,42 +633,89 @@ async function configureAddons(options, app) {
       chalk.red.bold("Heroku: ")
     );
     process.exit(1);
-    //await status.stop();
   }
 }
 
 async function deployDorcasApp(options, app, appFolder) {
-  const status = new Spinner("Deploying Dorcas Application...");
+  const status = new Spinner(
+    `Deploying Dorcas ${app.toUpperCase()} Application...`
+  );
   status.start();
 
-  //heroku container:push web
-  //heroku stack:set container
-
   status.stop();
-  let sourcePath =
-    options.targetDirectory + `/.env.deploy.` + options.template.toLowerCase();
 
-  options = {
-    ...options,
-    deployENVCore: sourcePath
-  };
+  let herokuAppName =
+    app == "core" ? options.herokuAppNameCore : options.herokuAppNameHub;
+
+  let deployPath = options.targetDirectory;
+
+  //create random deploy signature file (a hack to force heroku git recognize this as a unique & valid push)
+  let deploySignature = Str.random(8);
+
+  await utilities.writeFile(
+    options,
+    `Dorcas Deploy Signature: ${deploySignature}`,
+    `${deployPath}/${deploySignature}`,
+    async function(result) {
+      if (result) {
+        console.log(
+          `%s Deploy Signature file successfully written \n`,
+          chalk.green.bold("CLI: ")
+        );
+      } else {
+      }
+    }
+  );
 
   try {
-    //lets start with environmental (heroku config) variables
-    //let deployCommands = options.herokuConfigs;
-    let deployCommands = `heroku config:set --app ${options.herokuAppName} ${options.herokuConfigs}`;
+    let deployCommands = `cp ${deployPath}/${deploySignature} ${appFolder}deploy_${deploySignature}`;
 
-    //add final deploy commannds
-    deployCommands += ` && cp ${options.deployENVCore} ${appFolder}/.env && cd ${appFolder} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git init && heroku git:remote -a ${options.herokuAppName} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git add . && git commit -am "Heroku Deploy" && git push heroku master`;
+    if (app == "core") {
+      let sourcePath =
+        deployPath + `/.env.deploy.` + options.template.toLowerCase();
+
+      options = {
+        ...options,
+        deployENVCore: sourcePath
+      };
+
+      //lets start with environmental (heroku config) variables
+      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsCore}`;
+
+      //add final deploy commannds
+      deployCommands += ` && cp ${
+        options.deployENVCore
+      } ${appFolder}/.env && cd ${appFolder} && git init && heroku git:remote -a ${herokuAppName} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git add . && git commit -am "Heroku Dorcas ${app.toUpperCase()} Deploy" && git push heroku master`;
+    } else if (app == "hub") {
+      //lets start with environmental (heroku config) variables
+      //deployCommands += `heroku stack:set container --app ${herokuAppName}`;
+      //add final deploy commannds
+      //deployCommands += ` && cp ${options.deployHerokuYAMLPathHub} ${appFolder}/heroku.yaml && cd ${appFolder} && git init && heroku git:remote -a ${herokuAppName} && git add . && git commit -am "Heroku Dorcas HUB Deploy" && git push heroku master`;
+      let sourcePath =
+        deployPath + `/.env.deploy.` + options.template.toLowerCase();
+
+      options = {
+        ...options,
+        deployENVHub: sourcePath
+      };
+
+      //lets start with environmental (heroku config) variables
+      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsHub}`;
+
+      //add final deploy commannds
+      deployCommands += ` && cp ${
+        options.deployENVHub
+      } ${appFolder}/.env && cd ${appFolder} && git init && heroku git:remote -a ${herokuAppName} && echo "web: vendor/bin/heroku-php-apache2 public/" > Procfile && git add . && git commit -am "Heroku Dorcas ${app.toUpperCase()} Deploy" && git push heroku master`;
+    }
 
     console.log(
-      `%s Deploying Dorcas ${app.toUpperCase()} App...`,
+      `%s Deploying Dorcas ${app.toUpperCase()} App... \n`,
       chalk.green.bold("CLI: ")
     );
 
     if (options.debugMode) {
       console.log(
-        `%s Spawning ` + `${deployCommands} ...\n`,
+        `%s Spawning ` + `${deployCommands} ... \n`,
         chalk.yellow.bold("DEBUG: ")
       );
     }
@@ -595,11 +733,27 @@ async function deployDorcasApp(options, app, appFolder) {
     ls.on("close", async code => {
       //console.log(code)
       if (code === 0) {
-        console.log("%s Deployment Completed", chalk.green.bold("Heroku: "));
-        console.log("%s Opening...", chalk.green.bold("Heroku: "));
-        // Opens the URL in the default browser.
-        await open(option.deployURLCore);
+        console.log(
+          `%s Deployment of App (Dorcas ${app.toUpperCase()}) Completed`,
+          chalk.green.bold("CLI: ")
+        );
+        console.log(
+          "%s Launching App in browser...",
+          chalk.green.bold("CLI: ")
+        );
+
+        let deployURL =
+          app == "core" ? options.deployURLCore : options.deployURLHub;
+
+        await open(deployURL);
         //await open('https://sindresorhus.com', {app: {name: 'google chrome', arguments: ['--incognito']}});
+        if (app == "core") {
+          //createApp(options, "hub", "default"); //start work on Hub
+          checkApp(options, app);
+        } else {
+          await utilities.setupAdminAccount(options);
+          process.exit(1);
+        }
       }
     });
   } catch (err) {
@@ -609,3 +763,52 @@ async function deployDorcasApp(options, app, appFolder) {
 }
 
 exports.deployDorcasApp = deployDorcasApp;
+
+async function checkApp(options, app) {
+  const status = new Spinner(
+    `Checking the ${app.toUpperCase()} App Installation...`
+  );
+  status.start();
+  status.stop();
+
+  if (app == "core") {
+    try {
+      await utilities.checkDatabaseConnectionCORE(options, async function(
+        result
+      ) {
+        if (result) {
+          await utilities.checkOAuthTablesCORE(options, async function(result) {
+            if (result) {
+              setTimeout(async () => {
+                let res = await utilities.setupDorcasCoreOAuth(options);
+                options.clientId = res.client_id;
+                options.clientSecret = res.client_secret;
+                if (typeof options.clientId !== "undefined") {
+                  console.log(
+                    "%s Dorcas CORE OAuth Set",
+                    chalk.green.bold("Success")
+                  );
+                  createApp(options, "hub", "default"); //start work on Hub
+                }
+              }, 7500);
+            } else {
+              setTimeout(async () => {
+                console.log("Creating CORE OAuth Entries...");
+                await status.stop();
+                await checkApp(options, app);
+              }, 3000);
+            }
+          });
+        } else {
+          setTimeout(async () => {
+            console.log("retrying connection...");
+            await status.stop();
+            await checkApp(options, app);
+          }, 3000);
+        }
+      });
+    } catch (e) {
+      await status.stop();
+    }
+  }
+}

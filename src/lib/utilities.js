@@ -12,9 +12,12 @@ const CLI = require("clui");
 const Spinner = CLI.Spinner;
 const access = util.promisify(fs.access);
 const copy = util.promisify(ncp);
+const axios = require("axios");
+const mysql = require("mysql");
 const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "./params.js"));
 const heroku = require(path.join(__dirname, "../platforms/heroku/Heroku.js"));
+const yaml = require("js-yaml");
 
 async function installTemplateFiles(options) {
   if (options.debugMode) {
@@ -158,16 +161,6 @@ async function downloadFiles(options, app) {
   repoDownloadLink = `https://github.com/${repoArray[`git_repo_${app}`] +
     "/tarball/" +
     repoArray[`git_branch_${app}`]}`;
-
-  // console.log([
-  //     template,
-  //     destinationDir,
-  //     destinationFile,
-  //     destinationPath,
-  //     destinationExtractPath,
-  //     repoArray,
-  //     repoDownloadLink
-  // ])
 
   if (repoDownloadLink.length == 0) {
     console.log("%s Invalid repository URL", chalk.red.bold("Error"));
@@ -367,13 +360,8 @@ async function cleanupFiles(options, app, cleanupFolder, destinationFolder) {
           await downloadFiles(options, "hub");
         } else if (app == "hub" && options.template.toLowerCase() != "deploy") {
           await installContainerServices(options);
-        } else if (
-          app == "core" &&
-          options.template.toLowerCase() == "deploy"
-        ) {
-          heroku.deployDorcasApp(options, "core", destinationFolder);
-        } else if (app == "hub" && options.template.toLowerCase() == "deploy") {
-          //post deploy action
+        } else if (options.template.toLowerCase() == "deploy") {
+          heroku.deployDorcasApp(options, app, destinationFolder);
         }
       }
     });
@@ -495,7 +483,7 @@ async function setupCoreENV(options) {
       : "1025";
 
   let data = {
-    APP_NAME: "Dorcas",
+    APP_NAME: "DorcasCore",
     APP_ENV:
       options.template.toLowerCase() == "development"
         ? "development"
@@ -545,17 +533,13 @@ async function setupCoreENV(options) {
 
   if (options.template.toLowerCase() == "deploy") {
     if (options.deployPlatform == "heroku") {
-      //if platform is heroku, create a config set  string from  the ENVs
-      //heroku config:set DB_CONNECTION=mysql --app=dorcas-business-core-azdsl3ls
       let herokuConfigs = "";
       for (var key in data) {
         if (!data.hasOwnProperty(key)) {
           continue;
         } // skip this property
-        //herokuConfigs += `heroku config:set ${key}=${data[key]} &&`;
         herokuConfigs += `${key}=${data[key]} `;
       }
-      //herokuConfigs = Str(herokuConfigs).replaceLast("&&","").trim().get();
       herokuConfigs = Str(herokuConfigs)
         .rtrim()
         .get();
@@ -563,7 +547,7 @@ async function setupCoreENV(options) {
       options = {
         ...options,
         deployENVCore: sourcePath,
-        herokuConfigs: herokuConfigs
+        herokuConfigsCore: herokuConfigs
       };
 
       return {
@@ -591,3 +575,545 @@ async function setupCoreENV(options) {
 }
 
 exports.setupCoreENV = setupCoreENV;
+
+async function setupHubENV(options) {
+  let host_scheme,
+    host_domain_core,
+    host_domain_hub,
+    host_domain,
+    host_port_core,
+    host_port_hub;
+
+  let sourcePath =
+    options.template.toLowerCase() == "deploy"
+      ? options.targetDirectory +
+        `/.env.deploy.` +
+        options.template.toLowerCase()
+      : options.targetDirectory +
+        `/app/env_hub_` +
+        options.template.toLowerCase();
+
+  if (
+    options.template.toLowerCase() == "production" ||
+    options.template.toLowerCase() == "development"
+  ) {
+    //determine proper url format for both localhost and dns
+    host_scheme =
+      options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+    host_domain_core =
+      options.answers.dns === "dns"
+        ? params.docker.services.core_web.subdomain +
+          "." +
+          options.answers.domain
+        : params.general.host;
+    host_domain_hub =
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : params.general.host;
+    host_domain =
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : params.general.host;
+    host_port_core =
+      options.answers.dns === "dns"
+        ? ""
+        : ":" + (params.docker.services.core_web.port + options.port_increment);
+    host_port_hub =
+      options.answers.dns === "dns"
+        ? ""
+        : ":" + (params.docker.services.hub_web.port + options.port_increment);
+  } else {
+    //determine proper url format for deploy locations
+    host_scheme = "https";
+    host_domain_core = options.deployHostCore;
+    host_domain_hub = options.deployHostHub;
+    host_domain = options.deployDomain;
+    host_port_core = "";
+    host_port_hub = "";
+  }
+
+  let db_host =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBHost
+      : params.docker.services.mysql.name + options.container_name_addon;
+  let db_database_core =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBCore
+      : params.docker.services.mysql.db_core;
+  let db_database_hub =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBHub
+      : params.docker.services.mysql.db_hub;
+  let db_username =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBUser
+      : params.docker.services.mysql.user;
+  let db_password =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBPass
+      : options.databasePassword;
+  let db_port =
+    options.template.toLowerCase() == "deploy" ? options.deployDBPort : "3306";
+  let redis_host =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployRedisHost
+      : params.docker.services.redis.name + options.container_name_addon;
+  let redis_pass =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployRedisPass
+      : "null";
+  let redis_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployRedisPort
+      : "6379";
+  let mail_driver =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployMailDriver
+      : "smtp";
+  let mail_host =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployMailHost
+      : params.docker.services.smtp.name + options.container_name_addon;
+  let mail_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployMailPort
+      : "1025";
+
+  // SDK_HOST_PRODUCTION: "https://" + params.docker.services.core_web.name + options.container_name_addon + ":80",
+  //DORCAS_BASE_URL: `http://${params.docker.services.core_web.name + options.container_name_addon}:80`,
+  //STANDARD_HOST: options.answers.dns === "dns" ? options.answers.domain : `localhost:${params.docker.services.hub_web.port}`,
+  let data = {
+    APP_NAME: "DorcasHub",
+    APP_ENV:
+      options.template.toLowerCase() == "development"
+        ? "development"
+        : "production",
+    APP_KEY: Str.random(32),
+    APP_DEBUG:
+      options.template.toLowerCase() == "development" ? "true" : "false",
+    APP_LOG_LEVEL: "debug",
+    DORCAS_EDITION: "business",
+    SDK_HOST_PRODUCTION: `https://${host_domain_core}${host_port_core}`,
+    DORCAS_BASE_URL: `https://${host_domain_core}${host_port_core}`,
+    APP_URL: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
+    APP_URL_STATIC: `${host_scheme}://${host_domain_hub}${host_port_hub}`,
+    DEPLOY_ENV: "docker",
+    STANDARD_HOST: host_domain,
+    DORCAS_BASE_DOMAIN: host_domain,
+    DORCAS_ENV:
+      options.template.toLowerCase() == "development"
+        ? "development"
+        : "production",
+    DEPLOY_ENV:
+      options.template.toLowerCase() == "deploy" ? "deploy" : "docker",
+    DB_CONNECTION: "mysql",
+    DB_HOST: db_host,
+    DB_PORT: db_port,
+    DB_DATABASE: db_database_hub,
+    DB_USERNAME: db_username,
+    DB_PASSWORD: db_password,
+    BROADCAST_DRIVER: "pusher",
+    CACHE_DRIVER: "redis",
+    QUEUE_DRIVER: "redis",
+    FILESYSTEM_DRIVER: "file",
+    SESSION_DRIVER: "redis",
+    SESSION_LIFETIME: "120",
+    SESSION_CONNECTION: "default",
+    REDIS_HOST: redis_host,
+    REDIS_PASSWORD: redis_pass,
+    REDIS_PORT: redis_port,
+    REDIS_CLIENT: "predis",
+    MAIL_DRIVER: mail_driver,
+    MAIL_HOST: mail_host,
+    MAIL_PORT: mail_port,
+    DORCAS_CLIENT_ID: options.clientId,
+    DORCAS_CLIENT_SECRET: options.clientSecret,
+    DORCAS_PERSONAL_CLIENT_ID: options.clientId,
+    DORCAS_PERSONAL_CLIENT_SECRET: options.clientSecret
+  };
+
+  if (options.debugMode) {
+    console.log(
+      "%s Writing HUB ENV to : " + sourcePath,
+      chalk.yellow.bold("DEBUG: ")
+    );
+  }
+
+  if (options.template.toLowerCase() == "deploy") {
+    if (options.deployPlatform == "heroku") {
+      let herokuConfigs = "";
+      for (var key in data) {
+        if (!data.hasOwnProperty(key)) {
+          continue;
+        } // skip this property
+        herokuConfigs += `${key}=${data[key]} `;
+      }
+      herokuConfigs = Str(herokuConfigs)
+        .rtrim()
+        .get();
+
+      options = {
+        ...options,
+        deployENVHub: sourcePath,
+        herokuConfigsHub: herokuConfigs
+      };
+
+      return {
+        env: data,
+        options: options
+      };
+    }
+  }
+
+  fs.writeFile(sourcePath, envfile.stringify(data), err => {
+    if (err) {
+      console.log(chalk.red.bold(`${err}`));
+      process.exit(1);
+    } else {
+      console.log(
+        "%s Hub ENV successfully Installed",
+        chalk.green.bold("Success")
+      );
+    }
+  });
+}
+
+exports.setupHubENV = setupHubENV;
+
+async function writeYAML(options, data, output_path, callback) {
+  let yamlStr = yaml.safeDump(data);
+  await fs.writeFile(output_path, yamlStr, "utf8", err => {
+    if (err) {
+      console.log(`%s Error writing YAML: ${err}`, chalk.red.bold("CLI Error"));
+      callback(false);
+    } else {
+      callback(true);
+    }
+  });
+}
+
+exports.writeYAML = writeYAML;
+
+async function writeFile(options, data, output_path, callback) {
+  await fs.writeFile(output_path, data, "utf8", err => {
+    if (err) {
+      console.log(`%s Error writing File: ${err}`, chalk.red.bold("CLI Error"));
+      callback(false);
+    } else {
+      callback(true);
+    }
+  });
+}
+
+exports.writeFile = writeFile;
+
+async function checkDatabaseConnectionCORE(options, callback) {
+  let db_host =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBHost
+      : params.docker.services.mysql.host;
+  let db_database_core =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBCore
+      : params.docker.services.mysql.db_core;
+  let db_username =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBUser
+      : params.docker.services.mysql.user;
+  let db_password =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBPass
+      : options.databasePassword;
+  let db_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBPort
+      : params.docker.services.mysql.port + options.port_increment;
+
+  let connection_string = {
+    host: db_host,
+    database: db_database_core,
+    user: db_username,
+    password: db_password,
+    port: db_port
+  };
+
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode) {
+    console.log("DEBUG: Core DB Connection String: ");
+    console.log(connection_string);
+  }
+
+  const status = new Spinner("Connecting to Database...");
+  status.start();
+  connection.connect(async function(err) {
+    if (err) {
+      callback(false);
+      console.log("%s Database Connection Failed", chalk.red.bold("error"));
+      connection.end();
+      await status.stop();
+    } else {
+      await status.stop();
+      console.log(
+        "%s Database Connection Established",
+        chalk.green.bold("success")
+      );
+      connection.end();
+      callback(true);
+    }
+  });
+}
+
+exports.checkDatabaseConnectionCORE = checkDatabaseConnectionCORE;
+
+async function checkOAuthTablesCORE(options, callback) {
+  let db_host =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBHost
+      : params.docker.services.mysql.host;
+  let db_database_core =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBCore
+      : params.docker.services.mysql.db_core;
+  let db_username =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBUser
+      : params.docker.services.mysql.user;
+  let db_password =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBPass
+      : options.databasePassword;
+  let db_port =
+    options.template.toLowerCase() == "deploy"
+      ? options.deployDBPort
+      : params.docker.services.mysql.port + options.port_increment;
+
+  let connection_string = {
+    host: db_host,
+    database: db_database_core,
+    user: db_username,
+    password: db_password,
+    port: db_port
+  };
+
+  const connection = mysql.createConnection(connection_string);
+
+  if (options.debugMode) {
+    console.log("DEBUG: OAuth DB Connection String: ");
+    console.log(connection_string);
+  }
+
+  const status = new Spinner("Connecting to Database...");
+  status.start();
+  connection.query("SELECT * FROM oauth_clients", async function(
+    err,
+    result,
+    fields
+  ) {
+    if (err) {
+      console.log("%s Still Initializing Tables", chalk.red.bold("error"));
+      await status.stop();
+      connection.end();
+      callback(false);
+    } else {
+      console.log("%s OAuth Connection Instantiated", chalk.green.bold("CLI:"));
+      await status.stop();
+      connection.end();
+      callback(true);
+    }
+  });
+}
+exports.checkOAuthTablesCORE = checkOAuthTablesCORE;
+
+async function setupDorcasCoreOAuth(options) {
+  let host_scheme, host_domain_core, host_domain, host_port_core;
+
+  if (
+    options.template.toLowerCase() == "production" ||
+    options.template.toLowerCase() == "development"
+  ) {
+    //determine proper url format for both localhost and dns
+    host_scheme =
+      options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+    host_domain_core =
+      options.answers.dns === "dns"
+        ? params.docker.services.core_web.subdomain +
+          "." +
+          options.answers.domain
+        : params.general.host;
+
+    host_domain =
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : params.general.host;
+    host_port_core =
+      options.answers.dns === "dns"
+        ? ""
+        : ":" + (params.docker.services.core_web.port + options.port_increment);
+  } else {
+    //determine proper url format for deploy locations
+    host_scheme = "https";
+    host_domain_core = options.deployHostCore;
+    host_domain = options.deployDomain;
+    host_port_core = "";
+  }
+
+  let setup_url =
+    host_scheme +
+    "://" +
+    host_domain_core +
+    host_port_core +
+    "/" +
+    params.general.path_core_oauth_setup;
+
+  if (options.debugMode) {
+    console.log("DEBUG: OAuth Setup URL: ");
+    console.log(setup_url);
+  }
+
+  let res = await axios.post(setup_url).catch(err => {
+    console.log("Error setting up CORE OAuth: " + chalk.red.bold(`${err}`));
+    process.exit(1);
+  });
+  return res.data;
+}
+
+exports.setupDorcasCoreOAuth = setupDorcasCoreOAuth;
+
+async function setupAdminAccount(options) {
+  const status = new Spinner("Creating Admin Login Account...");
+  status.start();
+
+  let host_scheme, host_domain_core, host_domain, host_port_core;
+
+  if (
+    options.template.toLowerCase() == "production" ||
+    options.template.toLowerCase() == "development"
+  ) {
+    //determine proper url format for both localhost and dns
+    host_scheme =
+      options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+    host_domain_core =
+      options.answers.dns === "dns"
+        ? params.docker.services.core_web.subdomain +
+          "." +
+          options.answers.domain
+        : params.general.host;
+
+    host_domain =
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : params.general.host;
+    host_port_core =
+      options.answers.dns === "dns"
+        ? ""
+        : ":" + (params.docker.services.core_web.port + options.port_increment);
+  } else {
+    //determine proper url format for deploy locations
+    host_scheme = "https";
+    host_domain_core = options.deployHostCore;
+    host_domain = options.deployDomain;
+    host_port_core = "";
+  }
+
+  try {
+    setTimeout(async () => {
+      let data = {
+        firstname: options.answers.firstname,
+        lastname: options.answers.lastname,
+        email: options.answers.email,
+        installer: "true",
+        domain: options.answers.domain,
+        password: options.answers.password,
+        company: options.answers.company,
+        phone: options.answers.phone,
+        feature_select: options.answers.feature_select,
+        client_id: options.clientId,
+        client_secret: options.clientSecret
+      };
+      let res = await createUser(data, options);
+      if (typeof res !== "undefined") {
+        await status.stop();
+        console.log(
+          "%s Account Creation Successful!",
+          chalk.green.bold("Success")
+        );
+        console.log("\n");
+
+        //   let open_domain_localhost =
+        //     params.general.http_scheme +
+        //     "://" +
+        //     params.general.host +
+        //     ":" +
+        //     (params.docker.services.hub_web.port + options.port_increment);
+
+        //   let open_domain_dns =
+        //     (options.answers.dns_resolver === "valet"
+        //       ? "https"
+        //       : params.general.http_scheme) +
+        //     "://" +
+        //     options.answers.domain;
+
+        //   let open_domain =
+        //     options.answers.dns === "dns"
+        //       ? open_domain_dns
+        //       : open_domain_localhost;
+
+        let open_url =
+          host_scheme +
+          "://" +
+          host_domain_core +
+          host_port_core +
+          "/" +
+          params.general.path_hub_admin_login;
+
+        //let open_url = open_domain + "/" + params.general.path_hub_admin_login;
+
+        console.log(
+          "Dear " +
+            res.firstname +
+            " (" +
+            res.email +
+            "), " +
+            "thank you for installing the Dorcas HUB.\n" +
+            " Visit this URL address " +
+            chalk.green.bold(open_url) +
+            " and login with your earlier provided Admin " +
+            chalk.green.bold("email") +
+            " and " +
+            chalk.green.bold("password") +
+            "."
+        );
+        console.log("\n");
+      }
+    }, 7500);
+  } catch (err) {
+    await status.stop();
+    console.log(chalk.red.bold(`Admin Account Creation Error: ${err}`));
+  }
+}
+
+exports.setupAdminAccount = setupAdminAccount;
+
+async function createUser(body, options) {
+  let create_url =
+    params.general.http_scheme +
+    "://" +
+    params.general.host +
+    ":" +
+    (params.docker.services.core_web.port + options.port_increment) +
+    "/" +
+    params.general.path_core_user_register;
+
+  if (options.debugMode) {
+    console.log("DEBUG: Admin User Creation String: ");
+    console.log(create_url);
+    console.log(body);
+  }
+
+  let res = await axios.post(create_url, body).catch(err => {
+    console.log(chalk.red.bold(`User Creation Error: ${err}`));
+    process.exit();
+  });
+  return res.data.data;
+}
