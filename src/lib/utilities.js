@@ -524,6 +524,10 @@ async function setupCoreENV(options) {
     MAIL_PORT: mail_port
   };
 
+  if (options.template.toLowerCase() == "deploy") {
+    data["DB_HUB_PREFIX"] = "hub_";
+  }
+
   if (options.debugMode) {
     console.log(
       "%s Writing CORE ENV to : " + sourcePath,
@@ -731,6 +735,10 @@ async function setupHubENV(options) {
     DORCAS_PERSONAL_CLIENT_ID: options.clientId,
     DORCAS_PERSONAL_CLIENT_SECRET: options.clientSecret
   };
+
+  if (options.template.toLowerCase() == "deploy") {
+    data["DB_HUB_PREFIX"] = "hub_";
+  }
 
   if (options.debugMode) {
     console.log(
@@ -1020,8 +1028,7 @@ async function setupAdminAccount(options, callback) {
     setTimeout(async () => {
       let data = {};
 
-      let installationPass = Str.random(12);
-
+      let installationPass = "";
       if (
         options.template.toLowerCase() == "production" ||
         options.template.toLowerCase() == "development"
@@ -1040,9 +1047,10 @@ async function setupAdminAccount(options, callback) {
           client_secret: options.clientSecret
         };
       } else if (options.template.toLowerCase() == "deploy") {
+        installationPass = Str.random(12);
         data = {
-          firstname: "Dorcas",
-          lastname: "Admin",
+          firstname: "Admin",
+          lastname: "Dorcas",
           email: options.argEmail,
           installer: "true",
           domain: options.deployDomain,
@@ -1093,19 +1101,13 @@ async function setupAdminAccount(options, callback) {
         //let open_url = open_domain + "/" + params.general.path_hub_admin_login;
 
         console.log(
-          "Dear " +
-            res.firstname +
-            " (" +
-            res.email +
-            "), " +
-            "thank you for installing the Dorcas HUB.\n" +
-            " Visit this URL address " +
-            chalk.green.bold(open_url) +
-            " and login with your earlier provided Admin " +
-            chalk.green.bold("email") +
-            " and " +
-            chalk.green.bold("password") +
-            "."
+          `Dear ${res.firstname} (${res.email}), ` +
+            `thank you for installing the Dorcas HUB.\n` +
+            ` Visit this URL address ${chalk.green.bold(
+              open_url
+            )} and login with your ${chalk.green.bold("email")} (${
+              res.email
+            }) and ${chalk.green.bold("password")} ${installationPass}.`
         );
         console.log("\n");
 
@@ -1122,17 +1124,51 @@ async function setupAdminAccount(options, callback) {
 exports.setupAdminAccount = setupAdminAccount;
 
 async function createUser(body, options) {
+  let host_scheme, host_domain_core, host_domain, host_port_core;
+
+  if (
+    options.template.toLowerCase() == "production" ||
+    options.template.toLowerCase() == "development"
+  ) {
+    //determine proper url format for both localhost and dns
+    host_scheme =
+      options.answers.dns === "dns" ? "https" : params.general.http_scheme;
+    host_domain_core =
+      options.answers.dns === "dns"
+        ? params.docker.services.core_web.subdomain +
+          "." +
+          options.answers.domain
+        : params.general.host;
+
+    host_domain =
+      options.answers.dns === "dns"
+        ? options.answers.domain
+        : params.general.host;
+    host_port_core =
+      options.answers.dns === "dns"
+        ? ""
+        : ":" + (params.docker.services.core_web.port + options.port_increment);
+  } else {
+    //determine proper url format for deploy locations
+    host_scheme = "https";
+    host_domain_core = options.deployHostCore;
+    host_domain = options.deployDomain;
+    host_port_core = "";
+  }
+
   let create_url =
-    params.general.http_scheme +
+    host_scheme +
     "://" +
-    params.general.host +
-    ":" +
-    (params.docker.services.core_web.port + options.port_increment) +
+    host_domain_core +
+    host_port_core +
     "/" +
     params.general.path_core_user_register;
 
   if (options.debugMode) {
-    console.log("DEBUG: Admin User Creation String: ");
+    console.log(
+      " %s Admin User Creation String: ",
+      chalk.yellow.bold(`DEBUG: `)
+    );
     console.log(create_url);
     console.log(body);
   }
@@ -1143,3 +1179,4 @@ async function createUser(body, options) {
   });
   return res.data.data;
 }
+//reg 174 & 148

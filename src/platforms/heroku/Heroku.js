@@ -745,14 +745,14 @@ async function deployDorcasApp(options, app, appFolder) {
         let deployURL =
           app == "core" ? options.deployURLCore : options.deployURLHub;
 
-        await open(deployURL);
         //await open('https://sindresorhus.com', {app: {name: 'google chrome', arguments: ['--incognito']}});
         if (app == "core") {
-          //createApp(options, "hub", "default"); //start work on Hub
+          await open(deployURL);
           checkApp(options, app);
         } else {
           await utilities.setupAdminAccount(options, async function(result) {
             if (result) {
+              await open(deployURL);
               process.exit(1);
             } else {
               console.log(
