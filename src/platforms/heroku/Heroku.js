@@ -642,7 +642,7 @@ async function deployDorcasApp(options, app, appFolder) {
   );
   status.start();
 
-  status.stop();
+  //status.stop();
 
   let herokuAppName =
     app == "core" ? options.herokuAppNameCore : options.herokuAppNameHub;
@@ -751,8 +751,16 @@ async function deployDorcasApp(options, app, appFolder) {
           //createApp(options, "hub", "default"); //start work on Hub
           checkApp(options, app);
         } else {
-          await utilities.setupAdminAccount(options);
-          process.exit(1);
+          await utilities.setupAdminAccount(options, async function(result) {
+            if (result) {
+              process.exit(1);
+            } else {
+              console.log(
+                "%s Error Setting Up Login Account...",
+                chalk.red.bold("CLI: ")
+              );
+            }
+          });
         }
       }
     });

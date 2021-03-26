@@ -30,6 +30,7 @@ async function cli(args) {
           "--command_path": String,
           "--env_path": String,
           "--business": Boolean,
+          "--community": Boolean,
           "--debug": Boolean,
           "--arguments": Boolean,
           "--interactive": Boolean,
@@ -55,6 +56,7 @@ async function cli(args) {
         commandPath: args["--command_path"],
         envPath: args["--env_path"],
         businessEdition: args["--business"] || false,
+        communitiveEdition: args["--community"] || false,
         installInteractive: args["--interactive"] || false,
         installArguments: args["--arguments"] || true,
         defaultAction: rawArgs[2] || "help",
@@ -260,6 +262,24 @@ async function cli(args) {
         ) {
           console.error(
             "%s Please specify a valid Deployment Platform!",
+            chalk.red.bold("Error")
+          );
+          process.exit(1);
+        }
+        if (!options.businessEdition && !options.communityEdition) {
+          console.error(
+            "%s Please specify a Dorcas Edition to install!",
+            chalk.red.bold("Error")
+          );
+          process.exit(1);
+        }
+        if (!options.argEmail) {
+          console.error(
+            `%s The installation REQUIRES an email (${chalk.white.italic(
+              "--email"
+            )}) and OPTIONALLY Phone (${chalk.white.italic(
+              "--phone"
+            )}) and Company Name (${chalk.white.italic("--company")}).`,
             chalk.red.bold("Error")
           );
           process.exit(1);

@@ -980,7 +980,7 @@ async function setupDorcasCoreOAuth(options) {
 
 exports.setupDorcasCoreOAuth = setupDorcasCoreOAuth;
 
-async function setupAdminAccount(options) {
+async function setupAdminAccount(options, callback) {
   const status = new Spinner("Creating Admin Login Account...");
   status.start();
 
@@ -1018,19 +1018,42 @@ async function setupAdminAccount(options) {
 
   try {
     setTimeout(async () => {
-      let data = {
-        firstname: options.answers.firstname,
-        lastname: options.answers.lastname,
-        email: options.answers.email,
-        installer: "true",
-        domain: options.answers.domain,
-        password: options.answers.password,
-        company: options.answers.company,
-        phone: options.answers.phone,
-        feature_select: options.answers.feature_select,
-        client_id: options.clientId,
-        client_secret: options.clientSecret
-      };
+      let data = {};
+
+      let installationPass = Str.random(12);
+
+      if (
+        options.template.toLowerCase() == "production" ||
+        options.template.toLowerCase() == "development"
+      ) {
+        data = {
+          firstname: options.answers.firstname,
+          lastname: options.answers.lastname,
+          email: options.answers.email,
+          installer: "true",
+          domain: options.answers.domain,
+          password: options.answers.password,
+          company: options.answers.company,
+          phone: options.answers.phone,
+          feature_select: options.answers.feature_select,
+          client_id: options.clientId,
+          client_secret: options.clientSecret
+        };
+      } else if (options.template.toLowerCase() == "deploy") {
+        data = {
+          firstname: "Dorcas",
+          lastname: "Admin",
+          email: options.argEmail,
+          installer: "true",
+          domain: options.deployDomain,
+          password: installationPass,
+          company: options.deployCompany || "Dorcas Company",
+          phone: options.deployCompany || "08123456789",
+          feature_select: "all",
+          client_id: options.clientId,
+          client_secret: options.clientSecret
+        };
+      }
       let res = await createUser(data, options);
       if (typeof res !== "undefined") {
         await status.stop();
@@ -1085,11 +1108,14 @@ async function setupAdminAccount(options) {
             "."
         );
         console.log("\n");
+
+        callback(true);
       }
     }, 7500);
   } catch (err) {
     await status.stop();
     console.log(chalk.red.bold(`Admin Account Creation Error: ${err}`));
+    callback(false);
   }
 }
 
