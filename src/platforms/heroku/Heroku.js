@@ -680,7 +680,7 @@ async function deployDorcasApp(options, app, appFolder) {
       };
 
       //lets start with environmental (heroku config) variables
-      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsCore}`;
+      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsCore} LOG_CHANNEL=stderr`;
 
       //add final deploy commannds
       deployCommands += ` && cp ${
@@ -700,7 +700,7 @@ async function deployDorcasApp(options, app, appFolder) {
       };
 
       //lets start with environmental (heroku config) variables
-      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsHub}`;
+      deployCommands += ` && heroku config:set --app ${herokuAppName} ${options.herokuConfigsHub} LOG_CHANNEL=stderr`;
 
       //add final deploy commannds
       deployCommands += ` && cp ${
