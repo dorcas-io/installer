@@ -34,18 +34,8 @@ To do a quick install on your Mac or Ubuntu PC, the following are requirements:
   Once these are present, run this on a command line:
 
 ```
-$ mkdir dorcas && cd dorcas
-$ git clone https://github.com/dorcas-io/installer.git .
-$ npm install -g
-$ install-dorcas-business
-```
-
-OR
-
-```
-$ mkdir dorcas && cd dorcas
 $ npm i @dorcas-io/dorcas-installer
-$ install-dorcas-business
+$ dorcas install --business --interactive
 ```
 
 <!--$ curl -o dorcas-installer https://raw.githubusercontent.com/dorcas-io/installer/main/installer-business.sh-->
