@@ -17,22 +17,7 @@ const mysql = require("mysql");
 const Str = require("@supercharge/strings");
 const params = require(path.join(__dirname, "./params.js"));
 
-clear();
-console.log(
-  chalk.yellow(
-    figlet.textSync(params.general.title, { horizontalLayout: "full" })
-  )
-);
-
-console.log(
-  "Welcome to the Business Edition Installer v" +
-    require(path.join(__dirname, "../../package.json")).version
-);
-console.log(
-  "You can stop this installation process at any time by hitting CTRL + C"
-);
-
-async function createProject(options) {
+async function installBusiness(options) {
   const status = new Spinner("Initializing Installation...");
   await status.start();
 
@@ -65,7 +50,7 @@ async function createProject(options) {
     if (options.answers.agreement === "no") {
       console.log(
         "%s You did not agree to the Terms/Conditions of Use and Privacy Policy available at https://dorcas.io/agreement",
-        chalk.red.bold("Installation Failed:")
+        chalk.red.bold("Installation Failed: ")
       );
       process.exit(1);
     }
@@ -88,7 +73,7 @@ async function createProject(options) {
     status.stop();
   } catch (err) {
     console.error(
-      "%s Error Initializing Installation" + err,
+      "%s Error Initializing Installation: " + err,
       chalk.red.bold("ERROR")
     );
     await status.stop();
@@ -301,7 +286,7 @@ async function installContainersForCore(options, params) {
     }
 
     if (options.debugMode == "yes") {
-      console.log("DEBUG: Spawning docker-compose: ");
+      console.log("DEBUG: Spawning docker-compose for CORE: ");
       console.log(dockerComposeArgs);
     }
 
@@ -433,8 +418,10 @@ async function installContainersForHub(options) {
           `_hub`}`
       ];
     }
-
-    console.log(dockerComposeArgs);
+    if (options.debugMode == "yes") {
+      console.log("DEBUG: Spawning docker-compose for HUB: ");
+      console.log(dockerComposeArgs);
+    }
 
     const ls = spawn("docker-compose", dockerComposeArgs);
     ls.on("close", async code => {
@@ -511,7 +498,7 @@ async function setupAdminAccount(options) {
             " (" +
             res.email +
             "), " +
-            "thank you for installing the Dorcas Hub." +
+            "thank you for installing the Dorcas HUB.\n" +
             " Visit this URL address " +
             chalk.green.bold(open_url) +
             " and login with your earlier provided Admin " +
@@ -1117,13 +1104,15 @@ async function installDNSResolver(options) {
       });
     } catch (err) {
       console.log(
-        "%s Valet Site configuration error:" + err,
+        "%s Valet Site configuration error: " + err,
         chalk.red.bold("Error")
       );
       await status.stop();
     } finally {
     }
+  } else if (options.answers.dns === "localhost") {
+    await setupAdminAccount(options);
   }
 }
 
-exports.createProject = createProject;
+exports.installBusiness = installBusiness;
