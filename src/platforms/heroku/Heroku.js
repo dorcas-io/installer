@@ -640,7 +640,7 @@ async function deployDorcasApp(options, app, appFolder) {
   const status = new Spinner(
     `Deploying Dorcas ${app.toUpperCase()} Application...`
   );
-  status.start();
+  //status.start();
 
   //status.stop();
 
@@ -671,8 +671,7 @@ async function deployDorcasApp(options, app, appFolder) {
     let deployCommands = `cp ${deployPath}/${deploySignature} ${appFolder}deploy_${deploySignature}`;
 
     if (app == "core") {
-      let sourcePath =
-        deployPath + `/.env.deploy.` + options.template.toLowerCase();
+      let sourcePath = deployPath + `/.env.` + options.template.toLowerCase();
 
       options = {
         ...options,
@@ -691,8 +690,7 @@ async function deployDorcasApp(options, app, appFolder) {
       //deployCommands += `heroku stack:set container --app ${herokuAppName}`;
       //add final deploy commannds
       //deployCommands += ` && cp ${options.deployHerokuYAMLPathHub} ${appFolder}/heroku.yaml && cd ${appFolder} && git init && heroku git:remote -a ${herokuAppName} && git add . && git commit -am "Heroku Dorcas HUB Deploy" && git push heroku master`;
-      let sourcePath =
-        deployPath + `/.env.deploy.` + options.template.toLowerCase();
+      let sourcePath = deployPath + `/.env.` + options.template.toLowerCase();
 
       options = {
         ...options,

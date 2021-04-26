@@ -151,7 +151,7 @@ CREATE TABLE `hub_users` (
   `is_professional` tinyint unsigned NOT NULL DEFAULT '0',
   `partner_id` int unsigned DEFAULT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_email_unique` (`email`),

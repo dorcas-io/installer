@@ -384,9 +384,7 @@ async function setupCoreENV(options) {
 
   let sourcePath =
     options.template.toLowerCase() == "deploy"
-      ? options.targetDirectory +
-        `/.env.deploy.` +
-        options.template.toLowerCase()
+      ? options.targetDirectory + `/.env.` + options.template.toLowerCase()
       : options.targetDirectory +
         `/app/env_core_` +
         options.template.toLowerCase();
@@ -535,6 +533,22 @@ async function setupCoreENV(options) {
     );
   }
 
+  await fs.writeFile(sourcePath, envfile.stringify(data), err => {
+    if (err) {
+      console.log(chalk.red.bold(`${err}`));
+      console.log("error");
+      //status.stop;
+      process.exit(1);
+      //throw err;
+    } else {
+      //status.stop;
+      console.log(
+        "%s Core ENV successfully Installed",
+        chalk.green.bold("Success")
+      );
+    }
+  });
+
   if (options.template.toLowerCase() == "deploy") {
     if (options.deployPlatform == "heroku") {
       let herokuConfigs = "";
@@ -560,22 +574,6 @@ async function setupCoreENV(options) {
       };
     }
   }
-
-  await fs.writeFile(sourcePath, envfile.stringify(data), err => {
-    if (err) {
-      console.log(chalk.red.bold(`${err}`));
-      console.log("error");
-      //status.stop;
-      process.exit(1);
-      //throw err;
-    } else {
-      //status.stop;
-      console.log(
-        "%s Core ENV successfully Installed",
-        chalk.green.bold("Success")
-      );
-    }
-  });
 }
 
 exports.setupCoreENV = setupCoreENV;
@@ -590,9 +588,7 @@ async function setupHubENV(options) {
 
   let sourcePath =
     options.template.toLowerCase() == "deploy"
-      ? options.targetDirectory +
-        `/.env.deploy.` +
-        options.template.toLowerCase()
+      ? options.targetDirectory + `/.env.` + options.template.toLowerCase()
       : options.targetDirectory +
         `/app/env_hub_` +
         options.template.toLowerCase();
@@ -747,6 +743,18 @@ async function setupHubENV(options) {
     );
   }
 
+  fs.writeFile(sourcePath, envfile.stringify(data), err => {
+    if (err) {
+      console.log(chalk.red.bold(`${err}`));
+      process.exit(1);
+    } else {
+      console.log(
+        "%s Hub ENV successfully Installed",
+        chalk.green.bold("Success")
+      );
+    }
+  });
+
   if (options.template.toLowerCase() == "deploy") {
     if (options.deployPlatform == "heroku") {
       let herokuConfigs = "";
@@ -772,24 +780,12 @@ async function setupHubENV(options) {
       };
     }
   }
-
-  fs.writeFile(sourcePath, envfile.stringify(data), err => {
-    if (err) {
-      console.log(chalk.red.bold(`${err}`));
-      process.exit(1);
-    } else {
-      console.log(
-        "%s Hub ENV successfully Installed",
-        chalk.green.bold("Success")
-      );
-    }
-  });
 }
 
 exports.setupHubENV = setupHubENV;
 
 async function writeYAML(options, data, output_path, callback) {
-  let yamlStr = yaml.safeDump(data);
+  let yamlStr = yaml.dump(data);
   await fs.writeFile(output_path, yamlStr, "utf8", err => {
     if (err) {
       console.log(`%s Error writing YAML: ${err}`, chalk.red.bold("CLI Error"));
