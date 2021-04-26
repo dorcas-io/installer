@@ -1,6 +1,6 @@
 {
   "name": "@dorcas-io/dorcas-installer",
-  "version": "1.2.0",
+  "version": "1.3.1",
   "description": "Dorcas Hub: Business Edition Installer",
   "main": "src/bin/dorcas.js",
   "bin": {
@@ -12,11 +12,12 @@
   "keywords": [
     "dorcas",
     "installer",
-    "CLI"
+    "cli",
+    "framework"
   ],
   "contributors": [
-    "Ayotomide Aina",
-    "Bolaji Olawoye"
+    "Bolaji Olawoye",
+    "Ayotomide Aina"
   ],
   "license": "MIT",
   "dependencies": {
