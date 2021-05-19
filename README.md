@@ -14,7 +14,7 @@ For a fuller guide and more detailed instructions, [read the documentation](http
 
 The community version is suited for business development service providers or organisations offering institutional support to SMEs that wish to centrally manage a multi-tenant installation of the Hub.
 
-For a fuller guide and more detailed instructions, [read the documentation](https://github.com/dorcas-io/installer/wiki/Community)
+<!--For a fuller guide and more detailed instructions, [read the documentation](https://github.com/dorcas-io/installer/wiki/Community) -->
 
 ### Quick Start
 
