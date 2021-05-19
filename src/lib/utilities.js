@@ -988,7 +988,7 @@ async function setupAdminAccount(options, callback) {
   const status = new Spinner("Creating Admin Login Account...");
   status.start();
 
-  let host_scheme, host_domain_core, host_domain, host_port_core;
+  let host_scheme, host_domain_hub, host_domain, host_port_hub;
 
   if (
     options.template.toLowerCase() == "production" ||
@@ -997,9 +997,9 @@ async function setupAdminAccount(options, callback) {
     //determine proper url format for both localhost and dns
     host_scheme =
       options.answers.dns === "dns" ? "https" : params.general.http_scheme;
-    host_domain_core =
+    host_domain_hub =
       options.answers.dns === "dns"
-        ? params.docker.services.core_web.subdomain +
+        ? params.docker.services.hub_web.subdomain +
           "." +
           options.answers.domain
         : params.general.host;
@@ -1008,16 +1008,16 @@ async function setupAdminAccount(options, callback) {
       options.answers.dns === "dns"
         ? options.answers.domain
         : params.general.host;
-    host_port_core =
+    host_port_hub =
       options.answers.dns === "dns"
         ? ""
-        : ":" + (params.docker.services.core_web.port + options.port_increment);
+        : ":" + (params.docker.services.hub_web.port + options.port_increment);
   } else {
     //determine proper url format for deploy locations
     host_scheme = "https";
-    host_domain_core = options.deployHostCore;
+    host_domain_hub = options.deployHostHub;
     host_domain = options.deployDomain;
-    host_port_core = "";
+    host_port_hub = "";
   }
 
   try {
@@ -1051,8 +1051,8 @@ async function setupAdminAccount(options, callback) {
           installer: "true",
           domain: options.deployDomain,
           password: installationPass,
-          company: options.deployCompany || "Dorcas Company",
-          phone: options.deployCompany || "08123456789",
+          company: options.argCompany || "Dorcas Company",
+          phone: options.argPhone || "08123456789",
           feature_select: "all",
           client_id: options.clientId,
           client_secret: options.clientSecret
@@ -1089,8 +1089,8 @@ async function setupAdminAccount(options, callback) {
         let open_url =
           host_scheme +
           "://" +
-          host_domain_core +
-          host_port_core +
+          host_domain_hub +
+          host_port_hub +
           "/" +
           params.general.path_hub_admin_login;
 
